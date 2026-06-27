@@ -67,6 +67,7 @@
   #start::after {           /* the sharp full image — whole title always visible */
     content:''; position:absolute; inset:0; z-index:-1;
     background:var(--splash) center center / contain no-repeat;
+    animation:breathe 7s ease-in-out infinite;
   }
   #start h1 {
     font-size:min(16vw,150px); color:#fff; line-height:1;
@@ -83,6 +84,7 @@
   @keyframes wob { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(2deg)} }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
   @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  @keyframes breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
 
   /* ---- Grown-up controls menu ---- */
   #menu {
