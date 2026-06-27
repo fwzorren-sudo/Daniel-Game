@@ -40,6 +40,16 @@ That's it. No installing, no internet needed — it even works offline.
 
 ## 👀 For grown-ups
 
+### Hidden controls menu
+Open it by **holding the bottom-right corner for about a second**, or pressing
+**Ctrl + Shift + P** — both are hard for a toddler to trigger by accident.
+Everything you change is saved automatically for next time.
+
+- **Sliders:** Volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge)
+- **Toggles:** Sound effects, Big letters & numbers, Roaming dinos, Surprises when idle
+- **Buttons:** Reset count, Fullscreen, Done
+
+### Other niceties
 - **Auto-tidy:** old dinosaurs gently fade away so the screen never gets too crowded.
 - **Escape-proof:** the game fills the screen and swallows accidental key presses
   so a toddler can't easily click away or close things.

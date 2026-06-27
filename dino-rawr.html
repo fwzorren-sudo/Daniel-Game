@@ -72,6 +72,55 @@
   @keyframes wob { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(2deg)} }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
   @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+  /* ---- Grown-up controls menu ---- */
+  #menu {
+    position:fixed; inset:0; z-index:100; display:flex;
+    align-items:center; justify-content:center; padding:20px;
+    background:rgba(20,30,45,.55); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  #menu[hidden] { display:none; }
+  #menu .card {
+    width:min(440px,100%); max-height:90vh; overflow-y:auto;
+    background:#fff; border-radius:24px; padding:24px 24px 20px;
+    box-shadow:0 18px 50px rgba(0,0,0,.35);
+  }
+  #menu h2 { font-size:24px; color:#23314a; margin-bottom:4px; }
+  #menu .sub { font-size:13px; color:#7a8699; margin-bottom:18px; }
+  #menu .row {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:14px; padding:12px 0; border-top:1px solid #eef1f6;
+  }
+  #menu .row > span { font-size:16px; color:#2c3a52; font-weight:600; }
+  #menu input[type=range] { -webkit-appearance:none; appearance:none;
+    width:190px; height:8px; border-radius:6px; background:#e4e9f2; outline:none; }
+  #menu input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none;
+    width:26px; height:26px; border-radius:50%; background:#ff5d8f; cursor:pointer;
+    box-shadow:0 2px 5px rgba(0,0,0,.25); }
+  #menu input[type=range]::-moz-range-thumb { width:26px; height:26px; border:none;
+    border-radius:50%; background:#ff5d8f; cursor:pointer; }
+  #menu .ends { display:flex; justify-content:space-between; font-size:11px;
+    color:#9aa4b5; width:190px; margin-top:2px; }
+  /* toggle switch */
+  #menu .sw { position:relative; width:54px; height:30px; flex:0 0 auto; }
+  #menu .sw input { opacity:0; width:0; height:0; }
+  #menu .sw .track { position:absolute; inset:0; background:#cfd6e2; border-radius:30px;
+    transition:.2s; cursor:pointer; }
+  #menu .sw .track::before { content:''; position:absolute; width:24px; height:24px;
+    left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s;
+    box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  #menu .sw input:checked + .track { background:#06d6a0; }
+  #menu .sw input:checked + .track::before { transform:translateX(24px); }
+  #menu .btns { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+  #menu .btns button {
+    flex:1; min-width:120px; border:none; border-radius:14px; padding:14px 12px;
+    font-size:15px; font-weight:700; cursor:pointer; background:#eef1f6; color:#2c3a52;
+  }
+  #menu .btns button.primary { background:#ff5d8f; color:#fff; }
+  #menu .btns button:active { transform:translateY(2px); }
+  #menu .tip { font-size:12px; color:#9aa4b5; margin-top:16px; text-align:center; line-height:1.5; }
+  #menu :focus-visible { outline:3px solid #4cc9f0; outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -89,6 +138,60 @@
     <small>Tap, swipe, or mash the keyboard — make the dinosaurs roar! 🌋</small>
   </div>
 
+  <div id="menu" hidden>
+    <div class="card">
+      <h2>Grown-up Controls 🦕</h2>
+      <div class="sub">Changes are saved automatically.</div>
+
+      <div class="row">
+        <span>Volume</span>
+        <div>
+          <input type="range" id="optVol" min="0" max="100" step="1">
+          <div class="ends"><span>Quiet</span><span>Loud</span></div>
+        </div>
+      </div>
+      <div class="row">
+        <span>Surprise pace</span>
+        <div>
+          <input type="range" id="optPace" min="0" max="100" step="1">
+          <div class="ends"><span>Calm</span><span>Lively</span></div>
+        </div>
+      </div>
+      <div class="row">
+        <span>Dino size</span>
+        <div>
+          <input type="range" id="optSize" min="0" max="100" step="1">
+          <div class="ends"><span>Small</span><span>Huge</span></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <span>Sound effects</span>
+        <label class="sw"><input type="checkbox" id="optSound"><span class="track"></span></label>
+      </div>
+      <div class="row">
+        <span>Big letters &amp; numbers</span>
+        <label class="sw"><input type="checkbox" id="optLetters"><span class="track"></span></label>
+      </div>
+      <div class="row">
+        <span>Roaming dinos</span>
+        <label class="sw"><input type="checkbox" id="optRoam"><span class="track"></span></label>
+      </div>
+      <div class="row">
+        <span>Surprises when idle</span>
+        <label class="sw"><input type="checkbox" id="optIdle"><span class="track"></span></label>
+      </div>
+
+      <div class="btns">
+        <button id="optReset">Reset count</button>
+        <button id="optFull">Fullscreen</button>
+        <button id="optClose" class="primary">Done</button>
+      </div>
+      <div class="tip">Open this menu anytime: hold the <b>bottom-right corner</b>
+        for a second, or press <b>Ctrl + Shift + P</b>.</div>
+    </div>
+  </div>
+
 <script>
 "use strict";
 (function () {
@@ -102,6 +205,19 @@
   const paintBtn = document.getElementById('paintBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
   const exitHint = document.getElementById('exitHint');
+  const menu = document.getElementById('menu');
+
+  // ---- grown-up settings (persisted in the browser) ----
+  const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
+                     sound: true, letters: true, roamers: true, idle: true };
+  let settings = Object.assign({}, DEFAULTS);
+  try {
+    const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
+    settings = Object.assign(settings, saved);
+  } catch (e) {}
+  function saveSettings() {
+    try { localStorage.setItem('danielSaurus', JSON.stringify(settings)); } catch (e) {}
+  }
 
   let W = 0, H = 0, DPR = 1;
   function resize() {
@@ -127,16 +243,20 @@
 
   // ============================================================= audio
   // All sound is synthesized with the Web Audio API — no audio files needed.
-  let muted = false;
-  let audio = null;
+  let audio = null, master = null;
   function ensureAudio() {
     if (!audio) {
-      try { audio = new (window.AudioContext || window.webkitAudioContext)(); }
-      catch (e) { audio = null; }
+      try {
+        audio = new (window.AudioContext || window.webkitAudioContext)();
+        master = audio.createGain();
+        master.gain.value = settings.volume;
+        master.connect(audio.destination);
+      } catch (e) { audio = null; }
     }
     if (audio && audio.state === 'suspended') audio.resume();
     return audio;
   }
+  function applyVolume() { if (master) master.gain.value = settings.volume; }
 
   // a reused noise buffer gives the roars a breathy, growly texture
   let noiseBuf = null;
@@ -158,7 +278,7 @@
   ];
 
   function roar() {
-    const ac = ensureAudio(); if (!ac || muted) return;
+    const ac = ensureAudio(); if (!ac || !settings.sound) return;
     const t = ac.currentTime;
     const v = pick(VOICES);
     const dur = rnd(v.dur[0], v.dur[1]);
@@ -173,7 +293,7 @@
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(v.vol, t + 0.05);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    lp.connect(g).connect(ac.destination);
+    lp.connect(g).connect(master);
 
     // main growly tone with a pitch sweep
     const osc = ac.createOscillator();
@@ -209,7 +329,7 @@
   }
 
   function pop() {
-    const ac = ensureAudio(); if (!ac || muted) return;
+    const ac = ensureAudio(); if (!ac || !settings.sound) return;
     const t = ac.currentTime;
     const osc = ac.createOscillator();
     osc.type = 'triangle';
@@ -220,18 +340,20 @@
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-    osc.connect(g).connect(ac.destination);
+    osc.connect(g).connect(master);
     osc.start(t); osc.stop(t + 0.2);
   }
 
-  function setMuted(m) {
-    muted = m;
-    muteBtn.textContent = muted ? '🔇' : '🔊';
+  function applySound() {
+    muteBtn.textContent = settings.sound ? '🔊' : '🔇';
+    const cb = document.getElementById('optSound');
+    if (cb) cb.checked = settings.sound;
   }
   muteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    setMuted(!muted);
-    if (!muted) pop();
+    settings.sound = !settings.sound;
+    applySound(); saveSettings();
+    if (settings.sound) pop();
   });
 
   // ============================================================= counter
@@ -243,7 +365,6 @@
   // things on its own to win a wandering toddler's attention back.
   let lastInput = 0;            // time of the most recent tap/key
   let attractNext = 0;         // when the next surprise is scheduled
-  const IDLE_SECONDS = 6;      // how long to wait before attract mode kicks in
   function markInput() { lastInput = now; attractNext = 0; }
 
   // ============================================================= color mode
@@ -309,8 +430,9 @@
 
   const MAX_DINOS = 26; // auto-clear keeps the screen from overcrowding
 
+  const sizeScale = () => 0.6 + settings.size * 1.0; // 0.6x .. 1.6x
   function spawnDino(x, y, letter, skipCount) {
-    const size = rnd(80, 170);
+    const size = rnd(80, 170) * sizeScale();
     dinos.push({
       x, y, size,
       emoji: pick(DINOS),
@@ -411,7 +533,7 @@
   let roamTimer = 0, roamEvery = rnd(2.5, 5);
   function spawnRoamer() {
     const dir = Math.random() < 0.5 ? 1 : -1;
-    const size = rnd(90, 150);
+    const size = rnd(90, 150) * sizeScale();
     const groundY = H * 0.72 + rnd(0, H * 0.22);
     roamers.push({
       emoji: pick(DINOS),
@@ -438,9 +560,9 @@
     } else if (roll < 0.8) {
       // a roaming dino hops and calls out
       let r = roamers.find(rr => rr.x > rr.size && rr.x < W - rr.size);
-      if (!r) { spawnRoamer(); r = roamers[roamers.length - 1]; }
-      if (r) r.vy = -13;
-      roar();
+      if (!r && settings.roamers) { spawnRoamer(); r = roamers[roamers.length - 1]; }
+      if (r) { r.vy = -13; roar(); }
+      else { const x = rnd(W * 0.12, W * 0.88), y = rnd(H * 0.2, H * 0.6); spawnDino(x, y, null, true); }
     } else {
       // a cheerful little sparkle burst
       const x = rnd(W * 0.15, W * 0.85), y = rnd(H * 0.2, H * 0.55);
@@ -523,15 +645,19 @@
     drawScenery();
 
     // attract mode: surprise the kiddo if he's wandered off
-    if (started && now - lastInput > IDLE_SECONDS) {
-      if (attractNext === 0) attractNext = now + rnd(1.5, 3.5);
-      if (now >= attractNext) { doAttract(); attractNext = now + rnd(3, 6.5); }
+    // pace slider maps to how long we wait and how often surprises come
+    const idleWait = 12 - settings.pace * 8;          // 12s (calm) .. 4s (lively)
+    const gap = 8 - settings.pace * 5.5;              // 8s (calm) .. 2.5s (lively)
+    if (started && settings.idle && now - lastInput > idleWait) {
+      if (attractNext === 0) attractNext = now + gap * rnd(0.4, 0.8);
+      if (now >= attractNext) { doAttract(); attractNext = now + gap * rnd(0.7, 1.3); }
     }
 
     // roamers
     roamTimer += dt;
     if (roamTimer > roamEvery && roamers.length < 5) {
-      roamTimer = 0; roamEvery = rnd(2.5, 5.5); spawnRoamer();
+      roamTimer = 0; roamEvery = rnd(2.5, 5.5);
+      if (settings.roamers) spawnRoamer();
     }
     for (let i = roamers.length - 1; i >= 0; i--) {
       const r = roamers[i];
@@ -632,6 +758,51 @@
   }
   requestAnimationFrame(frame);
 
+  // ============================================================= grown-up menu
+  const optVol = document.getElementById('optVol');
+  const optPace = document.getElementById('optPace');
+  const optSize = document.getElementById('optSize');
+  const optSoundCb = document.getElementById('optSound');
+  const optLetters = document.getElementById('optLetters');
+  const optRoam = document.getElementById('optRoam');
+  const optIdle = document.getElementById('optIdle');
+
+  let menuOpen = false;
+  function syncMenuUI() {
+    optVol.value = Math.round(settings.volume * 100);
+    optPace.value = Math.round(settings.pace * 100);
+    optSize.value = Math.round(settings.size * 100);
+    optSoundCb.checked = settings.sound;
+    optLetters.checked = settings.letters;
+    optRoam.checked = settings.roamers;
+    optIdle.checked = settings.idle;
+  }
+  function openMenu() { menuOpen = true; syncMenuUI(); menu.hidden = false; }
+  function closeMenu() { menuOpen = false; menu.hidden = true; saveSettings(); }
+  function toggleMenu() { menuOpen ? closeMenu() : openMenu(); }
+
+  optVol.addEventListener('input', () => { settings.volume = optVol.value / 100; applyVolume(); });
+  optPace.addEventListener('input', () => { settings.pace = optPace.value / 100; });
+  optSize.addEventListener('input', () => { settings.size = optSize.value / 100; });
+  optSoundCb.addEventListener('change', () => { settings.sound = optSoundCb.checked; applySound(); saveSettings(); });
+  optLetters.addEventListener('change', () => { settings.letters = optLetters.checked; saveSettings(); });
+  optRoam.addEventListener('change', () => { settings.roamers = optRoam.checked; saveSettings(); });
+  optIdle.addEventListener('change', () => { settings.idle = optIdle.checked; saveSettings(); });
+
+  document.getElementById('optReset').addEventListener('click', () => {
+    dinoCount = 0; counterEl.textContent = '0';
+  });
+  document.getElementById('optFull').addEventListener('click', () => {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (req) { try { req.call(el); } catch (e) {} }
+  });
+  document.getElementById('optClose').addEventListener('click', closeMenu);
+  // tapping the dark backdrop (not the card) closes the menu
+  menu.addEventListener('pointerdown', (e) => { if (e.target === menu) closeMenu(); });
+
+  applySound();   // reflect the saved sound setting on the mute button now
+
   // ============================================================= input
   let started = false;
 
@@ -656,26 +827,46 @@
 
   // pointer / touch anywhere = click fun
   let pointerDown = false;
+  let lpTimer = null, lpX = 0, lpY = 0; // long-press to open the grown-up menu
+  function clearLongPress() { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } }
+
   canvas.addEventListener('pointerdown', (e) => {
+    if (menuOpen) return;
     if (!started) { start(); return; }
     pointerDown = true;
+    // hold the bottom-right corner for ~1s to open grown-up controls
+    if (e.clientX > W - 100 && e.clientY > H - 100) {
+      lpX = e.clientX; lpY = e.clientY;
+      clearLongPress();
+      lpTimer = setTimeout(() => { lpTimer = null; openMenu(); }, 1000);
+    }
     clickAt(e.clientX, e.clientY, e.pointerType);
   });
   // dragging finger-paints a rainbow trail while in color mode
   canvas.addEventListener('pointermove', (e) => {
+    if (lpTimer && (Math.abs(e.clientX - lpX) > 16 || Math.abs(e.clientY - lpY) > 16)) clearLongPress();
     if (!pointerDown || !paintMode) return;
     paintDot(e.clientX, e.clientY);
     const hit = dinoAt(e.clientX, e.clientY);
     if (hit) hit.tint = PAINT_COLORS[brushHue];
   });
-  window.addEventListener('pointerup', () => { pointerDown = false; });
-  window.addEventListener('pointercancel', () => { pointerDown = false; });
+  window.addEventListener('pointerup', () => { pointerDown = false; clearLongPress(); });
+  window.addEventListener('pointercancel', () => { pointerDown = false; clearLongPress(); });
 
   // ---------------------------------------------- keyboard
   // Esc, then Shift+Q quits fullscreen (grown-up escape hatch).
   let escArmed = false, escTimer = null;
 
   window.addEventListener('keydown', (e) => {
+    // Grown-up menu: Ctrl+Shift+P (hard to hit by random mashing)
+    if (e.ctrlKey && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+      e.preventDefault(); toggleMenu(); return;
+    }
+    if (menuOpen) { // while the menu is open, keys don't spawn dinos
+      if (e.key === 'Escape') closeMenu();
+      return;
+    }
+
     // Always allow the quit combo
     if (e.key === 'Escape') {
       escArmed = true;
@@ -706,8 +897,8 @@
 
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       const ch = e.key.toUpperCase();
-      spawnDino(x, y, ch);
-      spawnBigText(ch);
+      spawnDino(x, y, settings.letters ? ch : null);
+      if (settings.letters) spawnBigText(ch);
     } else {
       spawnDino(x, y);
     }
