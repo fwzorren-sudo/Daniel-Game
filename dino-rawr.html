@@ -238,6 +238,14 @@
   let dinoCount = 0;
   function bumpCounter() { dinoCount++; counterEl.textContent = dinoCount; }
 
+  // ============================================================= attract mode
+  // After a stretch with no input, the game starts doing surprising little
+  // things on its own to win a wandering toddler's attention back.
+  let lastInput = 0;            // time of the most recent tap/key
+  let attractNext = 0;         // when the next surprise is scheduled
+  const IDLE_SECONDS = 6;      // how long to wait before attract mode kicks in
+  function markInput() { lastInput = now; attractNext = 0; }
+
   // ============================================================= color mode
   // In color mode, dragging finger-paints rainbow trails, and tapping a
   // dinosaur splashes a bright color onto it.
@@ -301,7 +309,7 @@
 
   const MAX_DINOS = 26; // auto-clear keeps the screen from overcrowding
 
-  function spawnDino(x, y, letter) {
+  function spawnDino(x, y, letter, skipCount) {
     const size = rnd(80, 170);
     dinos.push({
       x, y, size,
@@ -316,7 +324,7 @@
       tint: null,               // set when colored in color mode
     });
     if (dinos.length > MAX_DINOS) dinos.shift(); // drop oldest
-    bumpCounter();
+    if (!skipCount) bumpCounter(); // auto-spawned dinos don't pad his score
     roar();
   }
 
@@ -379,6 +387,7 @@
   }
 
   function clickAt(x, y, type) {
+    markInput();
     const hit = dinoAt(x, y);
     if (paintMode) {
       paintDot(x, y);
@@ -416,6 +425,27 @@
       step: rnd(0, TAU), // for a little walking bob
       tint: null,        // set when colored in color mode
     });
+  }
+
+  // one little "come back!" surprise, chosen at random
+  function doAttract() {
+    const roll = Math.random();
+    if (roll < 0.45) {
+      // a dinosaur pops up by itself (doesn't count toward his score)
+      const x = rnd(W * 0.12, W * 0.88), y = rnd(H * 0.2, H * 0.6);
+      spawnDino(x, y, null, true);
+      confettiBurst(x, y, 14);
+    } else if (roll < 0.8) {
+      // a roaming dino hops and calls out
+      let r = roamers.find(rr => rr.x > rr.size && rr.x < W - rr.size);
+      if (!r) { spawnRoamer(); r = roamers[roamers.length - 1]; }
+      if (r) r.vy = -13;
+      roar();
+    } else {
+      // a cheerful little sparkle burst
+      const x = rnd(W * 0.15, W * 0.85), y = rnd(H * 0.2, H * 0.55);
+      confettiBurst(x, y, 18); emojiBurst(x, y); pop();
+    }
   }
 
   // ============================================================= drawing
@@ -491,6 +521,12 @@
 
     ctx.clearRect(0, 0, W, H);
     drawScenery();
+
+    // attract mode: surprise the kiddo if he's wandered off
+    if (started && now - lastInput > IDLE_SECONDS) {
+      if (attractNext === 0) attractNext = now + rnd(1.5, 3.5);
+      if (now >= attractNext) { doAttract(); attractNext = now + rnd(3, 6.5); }
+    }
 
     // roamers
     roamTimer += dt;
@@ -611,6 +647,7 @@
     // welcome splash
     confettiBurst(W / 2, H / 2, 60);
     spawnDino(W / 2, H / 2);
+    markInput();
     // fade the grown-up hint after a few seconds
     setTimeout(() => { exitHint.style.opacity = '0'; }, 6000);
   }
@@ -663,6 +700,7 @@
     // ignore pure modifier presses
     if (['Shift','Control','Alt','Meta','CapsLock','Tab'].includes(e.key)) return;
 
+    markInput();
     const x = rnd(W * 0.12, W * 0.88);
     const y = rnd(H * 0.18, H * 0.62);
 

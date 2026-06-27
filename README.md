@@ -28,6 +28,10 @@ That's it. No installing, no internet needed — it even works offline.
   - Tap the 🎨 button again to turn it off and wipe the painting clean.
 - **Different dino voices:** big dinos give a deep stompy roar, little ones do a
   cute baby chirp — every roar sounds a bit different.
+- **Come-back surprises:** if Daniel wanders off, after a few quiet seconds the
+  game starts doing things on its own — dinosaurs pop up, roamers call out, and
+  little sparkles burst — to catch his eye again. (These auto-dinos don't add to
+  his counter, and they still respect the mute button.)
 
 ## 🔊 Sound
 
