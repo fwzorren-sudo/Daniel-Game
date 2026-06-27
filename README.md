@@ -41,8 +41,11 @@ That's it. No installing, no internet needed — it even works offline.
 
 ## 🔊 Sound
 
-- Roars are real recorded clips (embedded right in the file — nothing to
-  download); pops and sparkles are synthesized live. It all works offline.
+- Roars *and* the little effects — pops, poofs, squeaks, whooshes and sparkly
+  shimmers — are real recorded clips, embedded right in the file (nothing to
+  download). It all works offline.
+- Things you'll hear: tap empty space for a **pop** or **shimmer**, boop a dino
+  for a cute **squeak**, dinos **poof** as they fade, and roamers **whoosh** in.
 - Tap the **speaker button** (🔊) in the top-right to mute or unmute.
 
 ## 👀 For grown-ups
@@ -72,8 +75,10 @@ A single self-contained HTML file — plain HTML5 Canvas + the Web Audio API,
 (traced from freshly-generated, license-free art) embedded right in the file
 and tinted with a canvas hue-shift for color mode. The roars are short recorded
 clips embedded as base64 and decoded with the Web Audio API (grouped into voice
-families, with a weighted short/long pick per press); pops and sparkles
-are synthesized live. The confetti physics are modeled on the
+families, with a weighted short/long pick per press); the gameplay effects
+(pops, poofs, squeaks, whooshes, shimmers) are recorded clips too — two
+variants each, picked at random — with a synthesized pop as a first-press
+fallback. The confetti physics are modeled on the
 [`canvas-confetti`](https://github.com/catdad/canvas-confetti) library
 (origin / spread / velocity / gravity) but re-implemented inline so the file
 stays completely offline-friendly.
