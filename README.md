@@ -12,15 +12,16 @@ every key and click does something fun.
    Chrome, Edge, Safari, Firefox).
 2. Tap the big **▶ Tap to Play!** button.
 3. Let Daniel go wild:
-   - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** Nine full-color
-     species covering every major family: T-rex, triceratops, stegosaurus,
-     brontosaurus, velociraptor, ankylosaurus, spinosaurus, parasaurolophus, and
-     pteranodon.
+   - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** and goes
+     scooting off in its own direction. Nine full-color species covering every
+     major family: T-rex, triceratops, stegosaurus, brontosaurus, velociraptor,
+     ankylosaurus, spinosaurus, parasaurolophus, and pteranodon.
    - **Press a letter or number** → it also appears **HUGE** and colorful (sneaky early learning!)
    - **Click / tap anywhere** → a surprise burst: every tap picks a different
      style — classic confetti, a party-popper fountain, an expanding ring,
      fluttering streamers, floating bubbles, or a gold star-pop 🎉⭐🫧
-   - **Friendly dinos walk across the screen** on their own — click one to make it jump and roar!
+   - **Friendly dinos walk across the screen** on their own — and **tapping any
+     dinosaur sends it tumbling off** in a random direction with a roar and a squeak!
 
 That's it. No installing, no internet needed — it even works offline.
 
