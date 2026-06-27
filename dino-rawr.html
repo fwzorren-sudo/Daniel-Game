@@ -726,6 +726,12 @@
     warm:    ['#ff5d8f','#ff7b00','#ffd166','#ef476f','#ffd23f'],
   };
   const BURST_STYLES = ['classic','fountain','ring','streamers','bubbles','stars'];
+  // each burst flavour gets its own sound so the variety you see is the variety you hear
+  const BURST_SOUND = {
+    classic: 'pop', bubbles: 'pop',
+    fountain: 'whoosh', streamers: 'whoosh',
+    ring: 'poof', stars: 'shimmer',
+  };
   function confettiBurst(x, y, count, style) {
     style = style || pick(BURST_STYLES);
     count = count || 26;
@@ -773,6 +779,7 @@
       });
     }
     if (parts.length > 700) parts.splice(0, parts.length - 700); // cap for frantic mashing
+    return style;
   }
 
   function emojiBurst(x, y) {
@@ -816,11 +823,11 @@
       }
       return;
     }
-    confettiBurst(x, y);
+    const burstStyle = confettiBurst(x, y);
     emojiBurst(x, y);
-    if (hit) { kickDino(hit); roar(hit.type); fx('squeak'); } // pet a dino
-    else if (type === 'touch') spawnDino(x, y); // tap empty space → roaring dino (great on phones/tablets)
-    else { if (!(Math.random() < 0.5 ? fx('pop') : fx('shimmer'))) pop(); }
+    if (hit) { kickDino(hit); roar(hit.type); fx('squeak'); } // pet a dino → roar
+    else if (type === 'touch') { suppressNextRoar = true; spawnDino(x, y); if (!fx(BURST_SOUND[burstStyle])) pop(); } // tap empty: a dino pops in + the burst's own sound (not a roar)
+    else { if (!fx(BURST_SOUND[burstStyle])) pop(); } // desktop click: the burst's matched sound
   }
 
   // ============================================================= roamers

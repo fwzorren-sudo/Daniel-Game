@@ -47,8 +47,10 @@ That's it. No installing, no internet needed — it even works offline.
 - Roars *and* the little effects — pops, poofs, squeaks, whooshes and sparkly
   shimmers — are real recorded clips, embedded right in the file (nothing to
   download). It all works offline.
-- Things you'll hear: tap empty space for a **pop** or **shimmer**, boop a dino
-  for a cute **squeak**, dinos **poof** as they fade, and roamers **whoosh** in.
+- Things you'll hear: every tap bursts confetti with a **matching sound** — a
+  fountain *whooshes*, a star-pop *shimmers*, a ring *poofs*, bubbles *pop* — so
+  the sound follows what you see. Boop a dino for a roar + cute **squeak**, and
+  dinos **poof** as they fade.
 - **🔔 Milestone chime:** every 100 dinosaurs, a happy chime rings out with a big
   confetti-and-sparkle celebration. How high can Daniel count?
 - **Background music** plays a gentle looping theme that matches the scene —
