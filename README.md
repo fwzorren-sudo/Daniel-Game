@@ -10,7 +10,7 @@ every key and click does something fun.
 
 1. Open **`dino-rawr.html`** by double-clicking it (any web browser works —
    Chrome, Edge, Safari, Firefox).
-2. Tap the big **▶ Tap to Play!** button.
+2. You'll see the **Daniel-saurus Rawr!** title screen — tap the big **▶ Tap to Play!** button (or tap anywhere).
 3. Let Daniel go wild:
    - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** and goes
      scooting off in its own direction. Nine full-color species covering every
