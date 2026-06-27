@@ -86,7 +86,7 @@
     <div class="dinos">🦕🦖</div>
     <h1>Daniel-saurus<br>Rawr!</h1>
     <div class="go">▶ Tap to Play!</div>
-    <small>Mash any keys and click anywhere — make the dinosaurs roar! 🌋</small>
+    <small>Tap, swipe, or mash the keyboard — make the dinosaurs roar! 🌋</small>
   </div>
 
 <script>
@@ -378,13 +378,13 @@
     return null;
   }
 
-  function clickAt(x, y) {
+  function clickAt(x, y, type) {
     const hit = dinoAt(x, y);
     if (paintMode) {
       paintDot(x, y);
       if (hit) {                       // color the dino & make it cheer
         hit.tint = pick(PAINT_COLORS);
-        if (hit.vy !== undefined && hit.baseY !== undefined) hit.vy = -12;
+        if (hit.baseY !== undefined) hit.vy = -12;
         roar();
       } else {
         pop();
@@ -393,8 +393,9 @@
     }
     confettiBurst(x, y);
     emojiBurst(x, y);
-    pop();
-    if (hit && hit.baseY !== undefined) { hit.vy = -12; roar(); } // pet a roamer
+    if (hit) { if (hit.baseY !== undefined) hit.vy = -12; roar(); } // pet a dino
+    else if (type === 'touch') spawnDino(x, y); // tap empty space → roaring dino (great on phones/tablets)
+    else pop();
   }
 
   // ============================================================= roamers
@@ -621,7 +622,7 @@
   canvas.addEventListener('pointerdown', (e) => {
     if (!started) { start(); return; }
     pointerDown = true;
-    clickAt(e.clientX, e.clientY);
+    clickAt(e.clientX, e.clientY, e.pointerType);
   });
   // dragging finger-paints a rainbow trail while in color mode
   canvas.addEventListener('pointermove', (e) => {
