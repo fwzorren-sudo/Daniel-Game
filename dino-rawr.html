@@ -406,70 +406,109 @@
 
   // Draw a dinosaur centered at the current origin, facing right, sized to ~s,
   // in the given color. The caller sets translation, rotation and alpha.
+  // Style: soft radial shading for roundness + a darker outline for a clean
+  // "sticker / coloring-book" look, plus cute faces (highlights, blush).
   function paintDino(type, s, color) {
     const m = s / 2;
-    const dark = shade(color, 0.72);
-    const light = lighten(color, 0.4);
+    const base = color;
+    const dark = shade(color, 0.68);
+    const outline = shade(color, 0.42);
+    const light = lighten(color, 0.5);
+    const belly = lighten(color, 0.3);
+    const lw = Math.max(1.4, s * 0.022);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    const fe = (x, y, rx, ry, a) => { ctx.beginPath();
-      ctx.ellipse(x*m, y*m, Math.abs(rx*m), Math.abs(ry*m), a||0, 0, TAU); ctx.fill(); };
-    const tri = (p) => { ctx.beginPath(); ctx.moveTo(p[0]*m, p[1]*m);
-      for (let i=2;i<p.length;i+=2) ctx.lineTo(p[i]*m, p[i+1]*m); ctx.closePath(); ctx.fill(); };
-    const eye = (x, y, r) => { ctx.fillStyle='#fff'; fe(x,y,r,r);
-      ctx.fillStyle='#222'; fe(x+r*0.15, y, r*0.55, r*0.55); };
 
-    if (type === 'bronto') {            // long-neck sauropod
-      ctx.fillStyle = color; tri([-0.95,0.28, -0.15,0.0, -0.2,0.5]);     // tail
-      ctx.fillStyle = dark; fe(-0.35,0.55,0.15,0.28); fe(0.0,0.58,0.15,0.28); fe(0.3,0.55,0.14,0.27); // legs
-      ctx.fillStyle = color; fe(-0.1,0.18,0.6,0.42);                     // body
-      ctx.fillStyle = light; fe(-0.1,0.34,0.46,0.22);                    // belly
-      ctx.fillStyle = color; fe(0.42,-0.28,0.15,0.46,-0.5);              // neck
-      fe(0.64,-0.62,0.22,0.16); fe(0.82,-0.58,0.1,0.1);                  // head + snout
-      eye(0.66,-0.66,0.06);
-    } else if (type === 'trex') {       // tyrannosaurus
-      ctx.fillStyle = color; tri([-0.92,0.12, -0.1,-0.05, -0.1,0.42]);   // tail
-      ctx.fillStyle = dark; fe(-0.02,0.55,0.2,0.32);                     // leg
-      ctx.fillStyle = color; fe(0.05,0.05,0.48,0.55);                    // body
-      ctx.fillStyle = light; fe(0.12,0.2,0.32,0.4);                      // belly
-      ctx.fillStyle = dark; tri([-0.2,0.84, 0.2,0.84, 0.05,0.6]);        // foot
-      ctx.fillStyle = color; fe(0.45,-0.4,0.42,0.32);                    // head
-      ctx.fillStyle = dark; tri([0.25,-0.32, 0.85,-0.3, 0.52,-0.08]);    // open jaw
-      ctx.fillStyle = '#fff'; tri([0.35,-0.3,0.42,-0.3,0.38,-0.2]); tri([0.55,-0.29,0.62,-0.29,0.58,-0.19]); // teeth
-      ctx.fillStyle = color; fe(0.22,0.16,0.13,0.06,-0.6);              // tiny arm
-      eye(0.52,-0.5,0.07);
-    } else if (type === 'stego') {      // stegosaurus
-      ctx.fillStyle = color; tri([-0.95,0.3, -0.15,0.05, -0.2,0.45]);    // tail
-      ctx.fillStyle = dark; fe(-0.3,0.56,0.15,0.26); fe(0.28,0.56,0.15,0.26); // legs
-      ctx.fillStyle = color; fe(0.02,0.22,0.58,0.34);                    // body
-      ctx.fillStyle = light; fe(0.02,0.34,0.46,0.18);                    // belly
-      ctx.fillStyle = color; fe(0.64,0.14,0.19,0.15); fe(0.78,0.17,0.08,0.08); // head + snout
-      ctx.fillStyle = shade(color,0.58);                                 // back plates
-      for (const px of [-0.34,-0.12,0.1,0.3]) tri([px-0.13,-0.02, px+0.13,-0.02, px,-0.44]);
-      ctx.fillStyle = shade(color,0.5);                                  // tail spikes
-      tri([-0.95,0.22,-0.83,0.08,-0.78,0.26]); tri([-0.86,0.34,-0.74,0.2,-0.7,0.37]);
-      eye(0.7,0.12,0.05);
-    } else if (type === 'tri') {        // triceratops
-      ctx.fillStyle = color; tri([-0.85,0.32, -0.15,0.05, -0.2,0.5]);    // tail
-      ctx.fillStyle = dark; fe(-0.3,0.56,0.16,0.27); fe(0.22,0.56,0.16,0.27); // legs
-      ctx.fillStyle = color; fe(-0.05,0.24,0.54,0.36);                   // body
-      ctx.fillStyle = light; fe(-0.05,0.36,0.42,0.2);                    // belly
-      ctx.fillStyle = shade(color,0.82); fe(0.46,-0.02,0.3,0.34);        // frill
-      ctx.fillStyle = color; fe(0.64,0.02,0.26,0.24);                    // head
-      ctx.fillStyle = dark; tri([0.84,0.02, 0.97,0.08, 0.84,0.16]);      // beak
-      ctx.fillStyle = '#fff'; tri([0.58,-0.16,0.64,-0.52,0.72,-0.14]);   // brow horn
-      tri([0.82,-0.04,0.96,-0.18,0.88,0.02]);                           // nose horn
-      eye(0.66,0.0,0.06);
-    } else {                            // ptero — pterodactyl (flying)
-      ctx.fillStyle = color; tri([0,-0.05, -0.95,-0.4, -0.12,0.28]);     // left wing
-      tri([0,-0.05, 0.95,-0.4, 0.12,0.28]);                             // right wing
-      ctx.fillStyle = shade(color,0.85); fe(0,0.06,0.17,0.32);           // body
-      ctx.fillStyle = color; fe(0.06,-0.36,0.16,0.14);                   // head
-      ctx.fillStyle = shade(color,0.68); tri([-0.02,-0.44,-0.22,-0.52,0.02,-0.3]); // crest
-      ctx.fillStyle = dark; tri([0.18,-0.42,0.58,-0.32,0.18,-0.28]);     // beak
-      ctx.strokeStyle = dark; ctx.lineWidth = 0.05*m;                    // dangling legs
-      ctx.beginPath(); ctx.moveTo(-0.05*m,0.32*m); ctx.lineTo(-0.12*m,0.52*m);
-      ctx.moveTo(0.06*m,0.32*m); ctx.lineTo(0.12*m,0.52*m); ctx.stroke();
-      eye(0.1,-0.38,0.05);
+    // path builders (don't paint) ----
+    const E = (x, y, rx, ry, a) => { ctx.beginPath();
+      ctx.ellipse(x*m, y*m, Math.abs(rx*m), Math.abs(ry*m), a||0, 0, TAU); };
+    const T = (p) => { ctx.beginPath(); ctx.moveTo(p[0]*m, p[1]*m);
+      for (let i=2;i<p.length;i+=2) ctx.lineTo(p[i]*m, p[i+1]*m); ctx.closePath(); };
+    // painters ----
+    const fil = (c) => { ctx.fillStyle = c; ctx.fill(); };
+    const out = () => { ctx.strokeStyle = outline; ctx.lineWidth = lw; ctx.stroke(); };
+    const part = (c) => { fil(c); out(); };                 // flat fill + outline
+    const gbody = (x, y, r) => { const cx=x*m, cy=y*m, rr=Math.max(0.001,r*m);
+      const g = ctx.createRadialGradient(cx-0.32*rr, cy-0.38*rr, rr*0.1, cx, cy, rr*1.15);
+      g.addColorStop(0, light); g.addColorStop(1, base); return g; };
+    const round = (x, y, r) => { E(x,y,r,r); fil(gbody(x,y,r)); out(); }; // shaded blob + outline
+    const spot = (x, y, r) => { E(x,y,r,r); fil('rgba(0,0,0,.08)'); };
+    const claws = (x, y, w, n) => { ctx.fillStyle = '#fff'; ctx.strokeStyle = outline; ctx.lineWidth = lw*0.6;
+      for (let i=0;i<n;i++){ const cx = x + (i-(n-1)/2)*w; T([cx-w*0.4,y, cx+w*0.4,y, cx,y+w*0.7]); ctx.fill(); ctx.stroke(); } };
+    const eye = (x, y, r) => {
+      E(x,y,r,r); fil('#fff'); ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=lw*0.6; ctx.stroke();
+      E(x+r*0.12, y+r*0.08, r*0.55, r*0.55); fil('#27313a');
+      E(x+r*0.34, y-r*0.18, r*0.22, r*0.22); fil('#fff'); };           // sparkle highlight
+    const blush = (x, y) => { E(x, y, 0.09, 0.06); fil('rgba(255,120,150,.4)'); };
+    const nostril = (x, y) => { E(x, y, 0.022, 0.03); fil('rgba(0,0,0,.3)'); };
+
+    if (type === 'bronto') {                                  // long-neck sauropod
+      T([-1.0,0.34, -0.5,0.46, 0.0,0.2, -0.02,0.46]); part(base);        // tail (attached)
+      E(-0.4,0.5,0.13,0.32); part(dark); E(-0.13,0.52,0.13,0.32); part(dark);
+      E(0.16,0.52,0.13,0.32); part(dark); E(0.42,0.5,0.12,0.31); part(dark); // 4 legs
+      claws(-0.4,0.78,0.1,2); claws(0.16,0.8,0.1,2);
+      round(-0.06,0.16,0.6);                                              // body
+      E(-0.06,0.32,0.44,0.24); fil(belly);                               // belly
+      E(0.42,-0.26,0.16,0.5,-0.5); part(base);                           // neck
+      round(0.66,-0.6,0.22);                                             // head
+      E(0.84,-0.56,0.12,0.1); part(base);                                // snout
+      spot(-0.25,0.05,0.1); spot(0.05,0.18,0.08); spot(-0.4,0.2,0.07);
+      nostril(0.9,-0.58); eye(0.68,-0.66,0.07); blush(0.56,-0.5);
+    } else if (type === 'trex') {                             // tyrannosaurus
+      T([-0.98,0.1, -0.45,0.3, -0.05,-0.05, -0.05,0.4]); part(base);     // tail (attached)
+      E(0.0,0.5,0.18,0.34); part(dark);                                  // back leg
+      T([-0.22,0.84, 0.24,0.84, 0.02,0.58]); fil(dark); out();           // foot
+      claws(-0.18,0.82,0.12,3);
+      round(0.05,0.06,0.5);                                              // body
+      E(0.12,0.22,0.3,0.38); fil(belly);                                 // belly
+      E(0.2,0.16,0.14,0.06,-0.6); part(base); claws(0.06,0.2,0.07,2);    // tiny arm
+      round(0.46,-0.4,0.42);                                             // head
+      T([0.3,-0.34, 0.86,-0.28, 0.84,-0.16, 0.5,-0.06]); part(dark);     // open mouth
+      ctx.fillStyle='#fff'; ctx.strokeStyle=outline; ctx.lineWidth=lw*0.5;
+      for (const tx of [0.4,0.55,0.7]) { T([tx-0.03,-0.3, tx+0.03,-0.3, tx,-0.2]); ctx.fill(); ctx.stroke(); } // teeth
+      spot(0.0,0.0,0.09); spot(-0.18,0.12,0.07);
+      nostril(0.8,-0.42); eye(0.54,-0.5,0.08); blush(0.66,-0.34);
+    } else if (type === 'stego') {                            // stegosaurus
+      T([-1.0,0.28, -0.5,0.4, -0.05,0.12, -0.05,0.4]); part(base);       // tail (attached)
+      ctx.fillStyle='#fff'; ctx.strokeStyle=outline; ctx.lineWidth=lw*0.7; // tail spikes
+      T([-0.98,0.16,-0.82,0.04,-0.78,0.22]); ctx.fill(); ctx.stroke();
+      T([-0.88,0.3,-0.72,0.18,-0.68,0.34]); ctx.fill(); ctx.stroke();
+      E(-0.32,0.52,0.13,0.28); part(dark); E(0.28,0.52,0.13,0.28); part(dark);
+      claws(-0.32,0.76,0.1,3); claws(0.28,0.76,0.1,3);
+      round(0.04,0.22,0.56);                                             // body
+      E(0.04,0.34,0.44,0.18); fil(belly);                                // belly
+      round(0.66,0.14,0.2);                                              // head
+      E(0.8,0.18,0.09,0.08); part(base);                                 // snout
+      for (const px of [-0.32,-0.1,0.12,0.32]) {                          // back plates (shaded)
+        T([px-0.14,-0.02, px+0.14,-0.02, px,-0.46]);
+        fil(gbody(px,-0.22,0.22)); ctx.strokeStyle=outline; ctx.lineWidth=lw*0.8; ctx.stroke();
+      }
+      nostril(0.84,0.17); eye(0.72,0.1,0.06); blush(0.62,0.22);
+    } else if (type === 'tri') {                              // triceratops
+      T([-0.9,0.34, -0.45,0.46, -0.05,0.16, -0.05,0.46]); part(base);    // tail (attached)
+      E(-0.3,0.52,0.14,0.28); part(dark); E(0.2,0.52,0.14,0.28); part(dark);
+      claws(-0.3,0.76,0.1,3); claws(0.2,0.76,0.1,3);
+      round(-0.05,0.24,0.54);                                            // body
+      E(-0.05,0.36,0.4,0.2); fil(belly);                                 // belly
+      E(0.46,-0.02,0.32,0.36); part(shade(color,0.8));                   // frill
+      round(0.64,0.04,0.26);                                             // head
+      T([0.84,0.04, 0.99,0.1, 0.84,0.18]); part(dark);                   // beak
+      ctx.fillStyle='#fff'; ctx.strokeStyle=outline; ctx.lineWidth=lw*0.7;
+      T([0.56,-0.14,0.64,-0.56,0.74,-0.12]); ctx.fill(); ctx.stroke();   // brow horn
+      T([0.82,-0.02,0.99,-0.2,0.9,0.04]); ctx.fill(); ctx.stroke();      // nose horn
+      nostril(0.86,0.08); eye(0.66,0.0,0.07); blush(0.56,0.12);
+    } else {                                                  // pterodactyl (flying)
+      const wing = (d) => { ctx.beginPath(); ctx.moveTo(0, -0.04*m);
+        ctx.quadraticCurveTo(d*0.5*m, -0.58*m, d*0.98*m, -0.28*m);
+        ctx.quadraticCurveTo(d*0.62*m, -0.06*m, d*0.14*m, 0.2*m); ctx.closePath(); };
+      wing(-1); part(shade(color,0.9)); wing(1); part(base);             // wings (far/near)
+      round(0.02,0.08,0.2);                                              // body
+      round(0.08,-0.34,0.17);                                            // head
+      T([0.0,-0.4,-0.26,-0.5,0.04,-0.26]); part(shade(color,0.7));       // crest
+      T([0.2,-0.42, 0.6,-0.34, 0.6,-0.28, 0.2,-0.26]); part(dark);       // long beak
+      ctx.strokeStyle=outline; ctx.lineWidth=lw;                          // dangling legs
+      ctx.beginPath(); ctx.moveTo(-0.04*m,0.34*m); ctx.lineTo(-0.12*m,0.54*m);
+      ctx.moveTo(0.08*m,0.34*m); ctx.lineTo(0.14*m,0.54*m); ctx.stroke();
+      nostril(0.24,-0.36); eye(0.12,-0.36,0.06);
     }
   }
 
@@ -736,12 +775,6 @@
       let alpha = 1;
       const fadeStart = d.life - 0.8;
       if (age > fadeStart) alpha = Math.max(0, 1 - (age - fadeStart) / 0.8);
-      // colored halo
-      ctx.save();
-      ctx.globalAlpha = alpha * 0.25;
-      ctx.fillStyle = d.hue;
-      ctx.beginPath(); ctx.arc(d.x, d.y, d.size * 0.6 * d.pop, 0, TAU); ctx.fill();
-      ctx.restore();
       drawSprite(d.type, d.tint || d.color, d.x, d.y, d.size * d.pop * ease, d.rot, alpha);
       if (d.letter) {
         ctx.save();
