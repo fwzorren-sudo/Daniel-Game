@@ -30,6 +30,7 @@
   .btn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.18); }
   #mute  { right:14px; }
   #paintBtn { right:84px; }
+  #sceneBtn { right:154px; }
   #paintBtn.on { background:#ffd166; box-shadow:0 4px 0 #d9a300; }
 
   /* ---- Dino counter badge ---- */
@@ -135,6 +136,7 @@
   <canvas id="paint"></canvas>
   <canvas id="game"></canvas>
   <div id="counter" title="Dinos made">🦕<span class="n">0</span></div>
+  <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
   <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
   <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
   <div id="exitHint">Grown-ups: press <b>Esc</b> then <b>Shift</b>+<b>Q</b> to quit</div>
@@ -216,6 +218,7 @@
   const startScreen = document.getElementById('start');
   const muteBtn = document.getElementById('mute');
   const paintBtn = document.getElementById('paintBtn');
+  const sceneBtn = document.getElementById('sceneBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
   const exitHint = document.getElementById('exitHint');
   const menu = document.getElementById('menu');
@@ -754,6 +757,7 @@
   };
   const THEME_ORDER = ['sunny','volcano','night','snowy'];
   const THEME_LABEL = { sunny:'☀️ Sunny', volcano:'🌋 Volcano', night:'🌙 Night', snowy:'❄️ Snowy' };
+  const THEME_ICON = { sunny:'☀️', volcano:'🌋', night:'🌙', snowy:'❄️' };
 
   // gentle ambient bits (falling snow / rising embers) tied to the theme
   const ambient = [];
@@ -790,8 +794,18 @@
   function applyTheme() {
     const t = THEMES[settings.bg] || THEMES.sunny;
     document.body.style.background = t.sky;
+    sceneBtn.textContent = THEME_ICON[settings.bg] || '☀️';
     ambient.length = 0;
   }
+  // on-screen button: tap to flip to the next background (Daniel can do this himself)
+  sceneBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const i = THEME_ORDER.indexOf(settings.bg);
+    settings.bg = THEME_ORDER[(i + 1) % THEME_ORDER.length];
+    applyTheme(); saveSettings();
+    if (typeof syncMenuUI === 'function') syncMenuUI();
+    pop();
+  });
 
   function drawEmoji(emoji, x, y, size, rot, alpha) {
     ctx.save();
