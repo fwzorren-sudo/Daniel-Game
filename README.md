@@ -29,10 +29,11 @@ That's it. No installing, no internet needed — it even works offline.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
   - Tap the 🎨 button again to turn it off and wipe the painting clean.
-- **Different dino voices:** real recorded roars grouped into three families —
-  the **T-Rex** has its own mighty roar, the big plant-eaters share a deep
-  **bellow**, and the raptor & pteranodon **screech**. Each dino usually gives
-  its short roar and *occasionally* lets out a longer one for a fun surprise.
+- **Different dino voices:** real recorded roars grouped into voice families —
+  the **T-Rex** and the **Spinosaurus** each get their own mighty roar, the big
+  plant-eaters share a deep **bellow**, and the raptor & pteranodon **screech**.
+  Each dino usually gives its short roar and *occasionally* lets out a longer
+  one for a fun surprise.
 - **Come-back surprises:** if Daniel wanders off, after a few quiet seconds the
   game starts doing things on its own — dinosaurs pop up, roamers call out, and
   little sparkles burst — to catch his eye again. (These auto-dinos don't add to
@@ -70,8 +71,8 @@ A single self-contained HTML file — plain HTML5 Canvas + the Web Audio API,
 **zero dependencies, zero build step**. The dinosaurs are nine SVG sprites
 (traced from freshly-generated, license-free art) embedded right in the file
 and tinted with a canvas hue-shift for color mode. The roars are short recorded
-clips embedded as base64 and decoded with the Web Audio API (grouped into three
-voice families, with a weighted short/long pick per press); pops and sparkles
+clips embedded as base64 and decoded with the Web Audio API (grouped into voice
+families, with a weighted short/long pick per press); pops and sparkles
 are synthesized live. The confetti physics are modeled on the
 [`canvas-confetti`](https://github.com/catdad/canvas-confetti) library
 (origin / spread / velocity / gravity) but re-implemented inline so the file
