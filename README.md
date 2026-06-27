@@ -46,6 +46,8 @@ That's it. No installing, no internet needed — it even works offline.
   download). It all works offline.
 - Things you'll hear: tap empty space for a **pop** or **shimmer**, boop a dino
   for a cute **squeak**, dinos **poof** as they fade, and roamers **whoosh** in.
+- **🔔 Milestone chime:** every 100 dinosaurs, a happy chime rings out with a big
+  confetti-and-sparkle celebration. How high can Daniel count?
 - **Background music** plays a gentle looping theme that matches the scene —
   sunny, volcano, night, or snowy. Adjust it (or turn it off) in the grown-up menu.
 - Tap the **speaker button** (🔊) in the top-right to mute or unmute everything.
