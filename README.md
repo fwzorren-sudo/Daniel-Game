@@ -29,8 +29,10 @@ That's it. No installing, no internet needed — it even works offline.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
   - Tap the 🎨 button again to turn it off and wipe the painting clean.
-- **Different dino voices:** big dinos give a deep stompy roar, little ones do a
-  cute baby chirp — every roar sounds a bit different.
+- **Different dino voices:** real recorded roars grouped into three families —
+  the **T-Rex** has its own mighty roar, the big plant-eaters share a deep
+  **bellow**, and the raptor & pteranodon **screech**. Each dino usually gives
+  its short roar and *occasionally* lets out a longer one for a fun surprise.
 - **Come-back surprises:** if Daniel wanders off, after a few quiet seconds the
   game starts doing things on its own — dinosaurs pop up, roamers call out, and
   little sparkles burst — to catch his eye again. (These auto-dinos don't add to
@@ -38,7 +40,8 @@ That's it. No installing, no internet needed — it even works offline.
 
 ## 🔊 Sound
 
-- Roars and pops are built right in (no files to download).
+- Roars are real recorded clips (embedded right in the file — nothing to
+  download); pops and sparkles are synthesized live. It all works offline.
 - Tap the **speaker button** (🔊) in the top-right to mute or unmute.
 
 ## 👀 For grown-ups
@@ -66,8 +69,10 @@ Everything you change is saved automatically for next time.
 A single self-contained HTML file — plain HTML5 Canvas + the Web Audio API,
 **zero dependencies, zero build step**. The dinosaurs are nine SVG sprites
 (traced from freshly-generated, license-free art) embedded right in the file
-and tinted with a canvas hue-shift for color mode. All sounds are synthesized
-live in the browser (no audio files). The confetti physics are modeled on the
+and tinted with a canvas hue-shift for color mode. The roars are short recorded
+clips embedded as base64 and decoded with the Web Audio API (grouped into three
+voice families, with a weighted short/long pick per press); pops and sparkles
+are synthesized live. The confetti physics are modeled on the
 [`canvas-confetti`](https://github.com/catdad/canvas-confetti) library
 (origin / spread / velocity / gravity) but re-implemented inline so the file
 stays completely offline-friendly.
