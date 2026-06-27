@@ -1,9 +1,9 @@
-# 🦕 Dino Rawr!
+# 🦖 Daniel-saurus Rawr!
 
 A super-simple dinosaur game for little kids who love to **mash the keyboard** and
-**click the mouse** — and shout "RAWR!" 🦖
+**click the mouse** — and shout "RAWR!" 🦕
 
-Built for a 4-year-old: there's no way to lose, no menus to get stuck in, and
+Made just for Daniel: there's no way to lose, no menus to get stuck in, and
 every key and click does something fun.
 
 ## ▶ How to play
@@ -11,7 +11,7 @@ every key and click does something fun.
 1. Open **`dino-rawr.html`** by double-clicking it (any web browser works —
    Chrome, Edge, Safari, Firefox).
 2. Tap the big **▶ Tap to Play!** button.
-3. Let your kiddo go wild:
+3. Let Daniel go wild:
    - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** 🦕🦖🐉🐲🦎🐊
    - **Press a letter or number** → it also appears **HUGE** and colorful (sneaky early learning!)
    - **Click / tap anywhere** → confetti, eggs, stars, and hearts burst out 🎉🥚⭐❤️
@@ -19,10 +19,20 @@ every key and click does something fun.
 
 That's it. No installing, no internet needed — it even works offline.
 
+## ✨ Things to try
+
+- **🦕 Dino counter** (top-left): counts every dinosaur Daniel makes. How high can he go?
+- **🎨 Color mode** (top-right button): tap it to turn on painting.
+  - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
+  - **Tap a dinosaur** to splash it with a bright color!
+  - Tap the 🎨 button again to turn it off and wipe the painting clean.
+- **Different dino voices:** big dinos give a deep stompy roar, little ones do a
+  cute baby chirp — every roar sounds a bit different.
+
 ## 🔊 Sound
 
 - Roars and pops are built right in (no files to download).
-- Tap the **speaker button** in the top-right corner to mute or unmute.
+- Tap the **speaker button** (🔊) in the top-right to mute or unmute.
 
 ## 👀 For grown-ups
 
@@ -36,7 +46,8 @@ That's it. No installing, no internet needed — it even works offline.
 ## 🛠️ Under the hood
 
 A single self-contained HTML file — plain HTML5 Canvas + the Web Audio API,
-**zero dependencies, zero build step**. The confetti physics are modeled on the
+**zero dependencies, zero build step**. All sounds are synthesized live in the
+browser (no audio files). The confetti physics are modeled on the
 [`canvas-confetti`](https://github.com/catdad/canvas-confetti) library
 (origin / spread / velocity / gravity) but re-implemented inline so the file
 stays completely offline-friendly.

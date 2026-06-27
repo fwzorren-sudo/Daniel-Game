@@ -3,29 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Dino Rawr! 🦕</title>
+<title>Daniel-saurus Rawr! 🦖</title>
 <style>
   :root { --sky1:#7ec8ff; --sky2:#bdeaff; --grass:#7ed957; }
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
     width:100%; height:100%; overflow:hidden;
-    background:#7ec8ff;
+    /* full sky-to-grass gradient lives on the page so the paint layer shows over it */
+    background:linear-gradient(#7ec8ff 0%, #bdeaff 55%, #d6f3ff 70%, #7ed957 70%, #5cba3a 100%);
     font-family:'Comic Sans MS','Comic Sans',Chalkboard,'Baloo',system-ui,sans-serif;
     -webkit-user-select:none; user-select:none;
     -webkit-tap-highlight-color:transparent;
     touch-action:none; cursor:default;
   }
-  #game { position:fixed; inset:0; display:block;
-    background:linear-gradient(#7ec8ff 0%, #bdeaff 55%, #d6f3ff 70%, #7ed957 70%, #5cba3a 100%); }
+  /* paint layer (persistent) sits under the dino layer */
+  #paint { position:fixed; inset:0; display:block; z-index:1; }
+  #game  { position:fixed; inset:0; display:block; z-index:2; }
 
-  /* ---- Mute button ---- */
-  #mute {
-    position:fixed; top:14px; right:14px; z-index:30;
+  /* ---- Top buttons ---- */
+  .btn {
+    position:fixed; top:14px; z-index:30;
     width:60px; height:60px; border:none; border-radius:50%;
     background:rgba(255,255,255,.85); box-shadow:0 4px 0 rgba(0,0,0,.18);
     font-size:30px; cursor:pointer; line-height:1;
   }
-  #mute:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.18); }
+  .btn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.18); }
+  #mute  { right:14px; }
+  #paintBtn { right:84px; }
+  #paintBtn.on { background:#ffd166; box-shadow:0 4px 0 #d9a300; }
+
+  /* ---- Dino counter badge ---- */
+  #counter {
+    position:fixed; top:14px; left:14px; z-index:30;
+    background:rgba(255,255,255,.85); box-shadow:0 4px 0 rgba(0,0,0,.18);
+    border-radius:34px; height:60px; padding:0 22px 0 14px;
+    display:flex; align-items:center; gap:8px;
+    font-size:30px; font-weight:bold; color:#3a3a3a; line-height:1;
+  }
+  #counter .n { color:#ff5d8f; min-width:1ch; }
 
   /* ---- Exit hint (for grown-ups) ---- */
   #exitHint {
@@ -60,13 +75,16 @@
 </style>
 </head>
 <body>
+  <canvas id="paint"></canvas>
   <canvas id="game"></canvas>
-  <button id="mute" title="Sound on/off" aria-label="Sound on or off">🔊</button>
+  <div id="counter" title="Dinos made">🦕<span class="n">0</span></div>
+  <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
+  <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
   <div id="exitHint">Grown-ups: press <b>Esc</b> then <b>Shift</b>+<b>Q</b> to quit</div>
 
   <div id="start">
     <div class="dinos">🦕🦖</div>
-    <h1>Dino Rawr!</h1>
+    <h1>Daniel-saurus<br>Rawr!</h1>
     <div class="go">▶ Tap to Play!</div>
     <small>Mash any keys and click anywhere — make the dinosaurs roar! 🌋</small>
   </div>
@@ -77,19 +95,27 @@
   // ============================================================= setup
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  const paintCanvas = document.getElementById('paint');
+  const pctx = paintCanvas.getContext('2d');
   const startScreen = document.getElementById('start');
   const muteBtn = document.getElementById('mute');
+  const paintBtn = document.getElementById('paintBtn');
+  const counterEl = document.getElementById('counter').querySelector('.n');
   const exitHint = document.getElementById('exitHint');
 
   let W = 0, H = 0, DPR = 1;
   function resize() {
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth; H = window.innerHeight;
-    canvas.width = Math.floor(W * DPR);
-    canvas.height = Math.floor(H * DPR);
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
+    for (const c of [canvas, paintCanvas]) {
+      c.width = Math.floor(W * DPR);
+      c.height = Math.floor(H * DPR);
+      c.style.width = W + 'px';
+      c.style.height = H + 'px';
+    }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    pctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // resizing wipes the canvas bitmap, so the painting starts fresh
   }
   window.addEventListener('resize', resize);
   resize();
@@ -112,35 +138,74 @@
     return audio;
   }
 
+  // a reused noise buffer gives the roars a breathy, growly texture
+  let noiseBuf = null;
+  function getNoise(ac) {
+    if (!noiseBuf) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return noiseBuf;
+  }
+
+  // Different dinosaurs have different "voices": a big stompy roar, a regular
+  // roar, or a cute little baby chirp. Each roar picks one at random.
+  const VOICES = [
+    { base: [60, 85],   dur: [0.7, 1.0], filt: [1200, 380], vol: 0.55, growl: 0.5 }, // big
+    { base: [100, 150], dur: [0.45, 0.7], filt: [1700, 520], vol: 0.5,  growl: 0.4 }, // mid
+    { base: [240, 340], dur: [0.18, 0.34], filt: [3200, 1400], vol: 0.4, growl: 0.15, baby: true }, // baby
+  ];
+
   function roar() {
     const ac = ensureAudio(); if (!ac || muted) return;
     const t = ac.currentTime;
-    const dur = rnd(0.45, 0.75);
-    const base = rnd(90, 150);
-
-    // growly tone with a downward pitch sweep
-    const osc = ac.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(base * 2.2, t);
-    osc.frequency.exponentialRampToValueAtTime(base * 0.7, t + dur);
-
-    // a wobble so it sounds like a creature, not a buzzer
-    const lfo = ac.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = rnd(14, 26);
-    const lfoGain = ac.createGain(); lfoGain.gain.value = base * 0.5;
-    lfo.connect(lfoGain).connect(osc.frequency);
+    const v = pick(VOICES);
+    const dur = rnd(v.dur[0], v.dur[1]);
+    const base = rnd(v.base[0], v.base[1]);
 
     const lp = ac.createBiquadFilter();
-    lp.type = 'lowpass'; lp.frequency.setValueAtTime(1600, t);
-    lp.frequency.exponentialRampToValueAtTime(500, t + dur);
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(v.filt[0], t);
+    lp.frequency.exponentialRampToValueAtTime(v.filt[1], t + dur);
 
     const g = ac.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.5, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(v.vol, t + 0.05);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    lp.connect(g).connect(ac.destination);
 
-    osc.connect(lp).connect(g).connect(ac.destination);
+    // main growly tone with a pitch sweep
+    const osc = ac.createOscillator();
+    osc.type = v.baby ? 'triangle' : 'sawtooth';
+    if (v.baby) { // chirp up then down — cute
+      osc.frequency.setValueAtTime(base, t);
+      osc.frequency.exponentialRampToValueAtTime(base * 1.8, t + dur * 0.4);
+      osc.frequency.exponentialRampToValueAtTime(base * 1.1, t + dur);
+    } else {       // roar starts high, falls to a growl
+      osc.frequency.setValueAtTime(base * 2.2, t);
+      osc.frequency.exponentialRampToValueAtTime(base * 0.7, t + dur);
+    }
+
+    // creature-y wobble
+    const lfo = ac.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = rnd(14, 28);
+    const lfoGain = ac.createGain(); lfoGain.gain.value = base * 0.5;
+    lfo.connect(lfoGain).connect(osc.frequency);
+    osc.connect(lp);
     osc.start(t); lfo.start(t);
     osc.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+
+    // breathy noise growl layered on top
+    if (v.growl > 0.001) {
+      const ns = ac.createBufferSource();
+      ns.buffer = getNoise(ac); ns.loop = true;
+      const ng = ac.createGain();
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(v.growl * 0.4, t + 0.06);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      ns.connect(ng).connect(lp);
+      ns.start(t); ns.stop(t + dur + 0.05);
+    }
   }
 
   function pop() {
@@ -169,6 +234,58 @@
     if (!muted) pop();
   });
 
+  // ============================================================= counter
+  let dinoCount = 0;
+  function bumpCounter() { dinoCount++; counterEl.textContent = dinoCount; }
+
+  // ============================================================= color mode
+  // In color mode, dragging finger-paints rainbow trails, and tapping a
+  // dinosaur splashes a bright color onto it.
+  let paintMode = false;
+  paintBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    paintMode = !paintMode;
+    paintBtn.classList.toggle('on', paintMode);
+    if (!paintMode) pctx.clearRect(0, 0, W, H); // tidy up the painting
+    pop();
+  });
+
+  const PAINT_COLORS = ['#ff5d8f','#ffb703','#ffd166','#06d6a0','#4cc9f0',
+                        '#9b5de5','#ff7b00','#ef476f','#118ab2','#f15bb5'];
+  let brushHue = 0;
+  function paintDot(x, y) {
+    brushHue = (brushHue + 1) % PAINT_COLORS.length;
+    const r = rnd(26, 52);
+    pctx.save();
+    pctx.globalAlpha = 0.85;
+    pctx.fillStyle = PAINT_COLORS[brushHue];
+    pctx.beginPath(); pctx.arc(x, y, r, 0, TAU); pctx.fill();
+    pctx.restore();
+  }
+
+  // Tinted-emoji cache: redraw an emoji recolored with a solid hue using
+  // 'source-atop' compositing, then reuse the offscreen canvas for that combo.
+  const TINT_SIZE = 256;
+  const tintCache = new Map();
+  function tintedEmoji(emoji, color) {
+    const key = emoji + color;
+    let c = tintCache.get(key);
+    if (!c) {
+      c = document.createElement('canvas');
+      c.width = c.height = TINT_SIZE;
+      const o = c.getContext('2d');
+      o.font = (TINT_SIZE * 0.82) + 'px serif';
+      o.textAlign = 'center'; o.textBaseline = 'middle';
+      o.fillText(emoji, TINT_SIZE / 2, TINT_SIZE / 2);
+      o.globalCompositeOperation = 'source-atop';
+      o.globalAlpha = 0.6;
+      o.fillStyle = color;
+      o.fillRect(0, 0, TINT_SIZE, TINT_SIZE);
+      tintCache.set(key, c);
+    }
+    return c;
+  }
+
   // ============================================================= sprites
   const DINOS = ['🦕','🦖','🐉','🐲','🦎','🐊'];
   const POP_EMOJI = ['🥚','⭐','💥','❤️','🌟','🍃','🌺','🦴','✨','🌈'];
@@ -196,8 +313,10 @@
       pop: 0,                   // 0..1 grow-in animation
       hue: pick(LETTER_COLORS),
       letter: letter || null,
+      tint: null,               // set when colored in color mode
     });
     if (dinos.length > MAX_DINOS) dinos.shift(); // drop oldest
+    bumpCounter();
     roar();
   }
 
@@ -247,16 +366,35 @@
     }
   }
 
+  // find the topmost dino (roaming or popped) under a point, if any
+  function dinoAt(x, y) {
+    for (const r of roamers) {
+      if (Math.abs(r.x - x) < r.size * 0.5 && Math.abs(r.y - y) < r.size * 0.5) return r;
+    }
+    for (let i = dinos.length - 1; i >= 0; i--) {
+      const d = dinos[i];
+      if (Math.abs(d.x - x) < d.size * 0.5 && Math.abs(d.y - y) < d.size * 0.5) return d;
+    }
+    return null;
+  }
+
   function clickAt(x, y) {
+    const hit = dinoAt(x, y);
+    if (paintMode) {
+      paintDot(x, y);
+      if (hit) {                       // color the dino & make it cheer
+        hit.tint = pick(PAINT_COLORS);
+        if (hit.vy !== undefined && hit.baseY !== undefined) hit.vy = -12;
+        roar();
+      } else {
+        pop();
+      }
+      return;
+    }
     confettiBurst(x, y);
     emojiBurst(x, y);
     pop();
-    // clicking a roaming dino makes it jump & roar
-    for (const r of roamers) {
-      if (Math.abs(r.x - x) < r.size * 0.6 && Math.abs(r.y - y) < r.size * 0.6) {
-        r.vy = -12; roar();
-      }
-    }
+    if (hit && hit.baseY !== undefined) { hit.vy = -12; roar(); } // pet a roamer
   }
 
   // ============================================================= roamers
@@ -275,6 +413,7 @@
       vy: 0,
       dir,
       step: rnd(0, TAU), // for a little walking bob
+      tint: null,        // set when colored in color mode
     });
   }
 
@@ -310,6 +449,24 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(emoji, 0, 0);
+    ctx.restore();
+  }
+
+  // draw a dinosaur, optionally recolored (tint), honoring translate+rotate
+  function drawSprite(emoji, tint, x, y, size, rot, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.translate(x, y);
+    if (rot) ctx.rotate(rot);
+    if (tint) {
+      const c = tintedEmoji(emoji, tint);
+      const box = size * 1.22; // match the glyph size of plain fillText
+      ctx.drawImage(c, -box / 2, -box / 2, box, box);
+    } else {
+      ctx.font = size + 'px serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(emoji, 0, 0);
+    }
     ctx.restore();
   }
 
@@ -349,7 +506,7 @@
       ctx.save();
       ctx.translate(r.x, r.y + bob);
       if (r.dir < 0) ctx.scale(-1, 1); // face travel direction
-      drawEmoji(r.emoji, 0, 0, r.size, 0, 1);
+      drawSprite(r.emoji, r.tint, 0, 0, r.size, 0, 1);
       ctx.restore();
       if (r.x < -r.size * 1.5 || r.x > W + r.size * 1.5) roamers.splice(i, 1);
     }
@@ -370,7 +527,7 @@
       ctx.fillStyle = d.hue;
       ctx.beginPath(); ctx.arc(d.x, d.y, d.size * 0.6 * d.pop, 0, TAU); ctx.fill();
       ctx.restore();
-      drawEmoji(d.emoji, d.x, d.y, d.size * d.pop * ease, d.rot, alpha);
+      drawSprite(d.emoji, d.tint, d.x, d.y, d.size * d.pop * ease, d.rot, alpha);
       if (d.letter) {
         ctx.save();
         ctx.globalAlpha = alpha;
@@ -460,10 +617,21 @@
   startScreen.addEventListener('pointerdown', (e) => { e.preventDefault(); start(); });
 
   // pointer / touch anywhere = click fun
+  let pointerDown = false;
   canvas.addEventListener('pointerdown', (e) => {
     if (!started) { start(); return; }
+    pointerDown = true;
     clickAt(e.clientX, e.clientY);
   });
+  // dragging finger-paints a rainbow trail while in color mode
+  canvas.addEventListener('pointermove', (e) => {
+    if (!pointerDown || !paintMode) return;
+    paintDot(e.clientX, e.clientY);
+    const hit = dinoAt(e.clientX, e.clientY);
+    if (hit) hit.tint = PAINT_COLORS[brushHue];
+  });
+  window.addEventListener('pointerup', () => { pointerDown = false; });
+  window.addEventListener('pointercancel', () => { pointerDown = false; });
 
   // ---------------------------------------------- keyboard
   // Esc, then Shift+Q quits fullscreen (grown-up escape hatch).
