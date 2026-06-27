@@ -12,7 +12,8 @@ every key and click does something fun.
    Chrome, Edge, Safari, Firefox).
 2. Tap the big **▶ Tap to Play!** button.
 3. Let Daniel go wild:
-   - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** 🦕🦖🐉🐲🦎🐊
+   - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** Five hand-drawn
+     species: brontosaurus, T-rex, stegosaurus, triceratops, and pterodactyl.
    - **Press a letter or number** → it also appears **HUGE** and colorful (sneaky early learning!)
    - **Click / tap anywhere** → confetti, eggs, stars, and hearts burst out 🎉🥚⭐❤️
    - **Friendly dinos walk across the screen** on their own — click one to make it jump and roar!

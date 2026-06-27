@@ -392,31 +392,88 @@
     pctx.restore();
   }
 
-  // Tinted-emoji cache: redraw an emoji recolored with a solid hue using
-  // 'source-atop' compositing, then reuse the offscreen canvas for that combo.
-  const TINT_SIZE = 256;
-  const tintCache = new Map();
-  function tintedEmoji(emoji, color) {
-    const key = emoji + color;
-    let c = tintCache.get(key);
-    if (!c) {
-      c = document.createElement('canvas');
-      c.width = c.height = TINT_SIZE;
-      const o = c.getContext('2d');
-      o.font = (TINT_SIZE * 0.82) + 'px serif';
-      o.textAlign = 'center'; o.textBaseline = 'middle';
-      o.fillText(emoji, TINT_SIZE / 2, TINT_SIZE / 2);
-      o.globalCompositeOperation = 'source-atop';
-      o.globalAlpha = 0.6;
-      o.fillStyle = color;
-      o.fillRect(0, 0, TINT_SIZE, TINT_SIZE);
-      tintCache.set(key, c);
+  // ============================================================= dinosaurs
+  // Five cartoon dinosaur species, drawn on the canvas (no dragons!). Drawing
+  // them by hand means real variety AND easy recoloring for color mode.
+  const DINO_TYPES = ['bronto', 'trex', 'stego', 'tri', 'ptero'];
+  const DINO_COLORS = ['#5bd75b','#4cc9f0','#ff9f1c','#9b5de5',
+                       '#ff5d8f','#2ec4b6','#ffd166','#7ed957'];
+
+  function hexRGB(h) { const n = parseInt(h.slice(1), 16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+  function shade(h, f) { const [r,g,b] = hexRGB(h); return 'rgb('+(r*f|0)+','+(g*f|0)+','+(b*f|0)+')'; }
+  function lighten(h, f) { const [r,g,b] = hexRGB(h);
+    return 'rgb('+((r+(255-r)*f)|0)+','+((g+(255-g)*f)|0)+','+((b+(255-b)*f)|0)+')'; }
+
+  // Draw a dinosaur centered at the current origin, facing right, sized to ~s,
+  // in the given color. The caller sets translation, rotation and alpha.
+  function paintDino(type, s, color) {
+    const m = s / 2;
+    const dark = shade(color, 0.72);
+    const light = lighten(color, 0.4);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const fe = (x, y, rx, ry, a) => { ctx.beginPath();
+      ctx.ellipse(x*m, y*m, Math.abs(rx*m), Math.abs(ry*m), a||0, 0, TAU); ctx.fill(); };
+    const tri = (p) => { ctx.beginPath(); ctx.moveTo(p[0]*m, p[1]*m);
+      for (let i=2;i<p.length;i+=2) ctx.lineTo(p[i]*m, p[i+1]*m); ctx.closePath(); ctx.fill(); };
+    const eye = (x, y, r) => { ctx.fillStyle='#fff'; fe(x,y,r,r);
+      ctx.fillStyle='#222'; fe(x+r*0.15, y, r*0.55, r*0.55); };
+
+    if (type === 'bronto') {            // long-neck sauropod
+      ctx.fillStyle = color; tri([-0.95,0.28, -0.15,0.0, -0.2,0.5]);     // tail
+      ctx.fillStyle = dark; fe(-0.35,0.55,0.15,0.28); fe(0.0,0.58,0.15,0.28); fe(0.3,0.55,0.14,0.27); // legs
+      ctx.fillStyle = color; fe(-0.1,0.18,0.6,0.42);                     // body
+      ctx.fillStyle = light; fe(-0.1,0.34,0.46,0.22);                    // belly
+      ctx.fillStyle = color; fe(0.42,-0.28,0.15,0.46,-0.5);              // neck
+      fe(0.64,-0.62,0.22,0.16); fe(0.82,-0.58,0.1,0.1);                  // head + snout
+      eye(0.66,-0.66,0.06);
+    } else if (type === 'trex') {       // tyrannosaurus
+      ctx.fillStyle = color; tri([-0.92,0.12, -0.1,-0.05, -0.1,0.42]);   // tail
+      ctx.fillStyle = dark; fe(-0.02,0.55,0.2,0.32);                     // leg
+      ctx.fillStyle = color; fe(0.05,0.05,0.48,0.55);                    // body
+      ctx.fillStyle = light; fe(0.12,0.2,0.32,0.4);                      // belly
+      ctx.fillStyle = dark; tri([-0.2,0.84, 0.2,0.84, 0.05,0.6]);        // foot
+      ctx.fillStyle = color; fe(0.45,-0.4,0.42,0.32);                    // head
+      ctx.fillStyle = dark; tri([0.25,-0.32, 0.85,-0.3, 0.52,-0.08]);    // open jaw
+      ctx.fillStyle = '#fff'; tri([0.35,-0.3,0.42,-0.3,0.38,-0.2]); tri([0.55,-0.29,0.62,-0.29,0.58,-0.19]); // teeth
+      ctx.fillStyle = color; fe(0.22,0.16,0.13,0.06,-0.6);              // tiny arm
+      eye(0.52,-0.5,0.07);
+    } else if (type === 'stego') {      // stegosaurus
+      ctx.fillStyle = color; tri([-0.95,0.3, -0.15,0.05, -0.2,0.45]);    // tail
+      ctx.fillStyle = dark; fe(-0.3,0.56,0.15,0.26); fe(0.28,0.56,0.15,0.26); // legs
+      ctx.fillStyle = color; fe(0.02,0.22,0.58,0.34);                    // body
+      ctx.fillStyle = light; fe(0.02,0.34,0.46,0.18);                    // belly
+      ctx.fillStyle = color; fe(0.64,0.14,0.19,0.15); fe(0.78,0.17,0.08,0.08); // head + snout
+      ctx.fillStyle = shade(color,0.58);                                 // back plates
+      for (const px of [-0.34,-0.12,0.1,0.3]) tri([px-0.13,-0.02, px+0.13,-0.02, px,-0.44]);
+      ctx.fillStyle = shade(color,0.5);                                  // tail spikes
+      tri([-0.95,0.22,-0.83,0.08,-0.78,0.26]); tri([-0.86,0.34,-0.74,0.2,-0.7,0.37]);
+      eye(0.7,0.12,0.05);
+    } else if (type === 'tri') {        // triceratops
+      ctx.fillStyle = color; tri([-0.85,0.32, -0.15,0.05, -0.2,0.5]);    // tail
+      ctx.fillStyle = dark; fe(-0.3,0.56,0.16,0.27); fe(0.22,0.56,0.16,0.27); // legs
+      ctx.fillStyle = color; fe(-0.05,0.24,0.54,0.36);                   // body
+      ctx.fillStyle = light; fe(-0.05,0.36,0.42,0.2);                    // belly
+      ctx.fillStyle = shade(color,0.82); fe(0.46,-0.02,0.3,0.34);        // frill
+      ctx.fillStyle = color; fe(0.64,0.02,0.26,0.24);                    // head
+      ctx.fillStyle = dark; tri([0.84,0.02, 0.97,0.08, 0.84,0.16]);      // beak
+      ctx.fillStyle = '#fff'; tri([0.58,-0.16,0.64,-0.52,0.72,-0.14]);   // brow horn
+      tri([0.82,-0.04,0.96,-0.18,0.88,0.02]);                           // nose horn
+      eye(0.66,0.0,0.06);
+    } else {                            // ptero — pterodactyl (flying)
+      ctx.fillStyle = color; tri([0,-0.05, -0.95,-0.4, -0.12,0.28]);     // left wing
+      tri([0,-0.05, 0.95,-0.4, 0.12,0.28]);                             // right wing
+      ctx.fillStyle = shade(color,0.85); fe(0,0.06,0.17,0.32);           // body
+      ctx.fillStyle = color; fe(0.06,-0.36,0.16,0.14);                   // head
+      ctx.fillStyle = shade(color,0.68); tri([-0.02,-0.44,-0.22,-0.52,0.02,-0.3]); // crest
+      ctx.fillStyle = dark; tri([0.18,-0.42,0.58,-0.32,0.18,-0.28]);     // beak
+      ctx.strokeStyle = dark; ctx.lineWidth = 0.05*m;                    // dangling legs
+      ctx.beginPath(); ctx.moveTo(-0.05*m,0.32*m); ctx.lineTo(-0.12*m,0.52*m);
+      ctx.moveTo(0.06*m,0.32*m); ctx.lineTo(0.12*m,0.52*m); ctx.stroke();
+      eye(0.1,-0.38,0.05);
     }
-    return c;
   }
 
   // ============================================================= sprites
-  const DINOS = ['🦕','🦖','🐉','🐲','🦎','🐊'];
   const POP_EMOJI = ['🥚','⭐','💥','❤️','🌟','🍃','🌺','🦴','✨','🌈'];
   const LETTER_COLORS = ['#ff5d8f','#ffb703','#06d6a0','#4cc9f0','#9b5de5','#ff7b00','#ef476f','#118ab2'];
   const CONFETTI_COLORS = ['#ff5d8f','#ffd166','#06d6a0','#4cc9f0','#9b5de5','#ff7b00','#ffffff'];
@@ -433,15 +490,17 @@
   const sizeScale = () => 0.6 + settings.size * 1.0; // 0.6x .. 1.6x
   function spawnDino(x, y, letter, skipCount) {
     const size = rnd(80, 170) * sizeScale();
+    const color = pick(DINO_COLORS);
     dinos.push({
       x, y, size,
-      emoji: pick(DINOS),
+      type: pick(DINO_TYPES),
+      color,
       rot: rnd(-0.35, 0.35),
       vrot: rnd(-0.02, 0.02),
       born: now,
       life: rnd(3.2, 5.0),     // seconds before it fades away (auto-clear)
       pop: 0,                   // 0..1 grow-in animation
-      hue: pick(LETTER_COLORS),
+      hue: color,               // halo + letter accent
       letter: letter || null,
       tint: null,               // set when colored in color mode
     });
@@ -536,7 +595,8 @@
     const size = rnd(90, 150) * sizeScale();
     const groundY = H * 0.72 + rnd(0, H * 0.22);
     roamers.push({
-      emoji: pick(DINOS),
+      type: pick(DINO_TYPES),
+      color: pick(DINO_COLORS),
       size,
       x: dir === 1 ? -size : W + size,
       y: groundY,
@@ -605,21 +665,13 @@
     ctx.restore();
   }
 
-  // draw a dinosaur, optionally recolored (tint), honoring translate+rotate
-  function drawSprite(emoji, tint, x, y, size, rot, alpha) {
+  // draw a dinosaur (recolored via tint in color mode), honoring translate+rotate
+  function drawSprite(type, color, x, y, size, rot, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha == null ? 1 : alpha;
     ctx.translate(x, y);
     if (rot) ctx.rotate(rot);
-    if (tint) {
-      const c = tintedEmoji(emoji, tint);
-      const box = size * 1.22; // match the glyph size of plain fillText
-      ctx.drawImage(c, -box / 2, -box / 2, box, box);
-    } else {
-      ctx.font = size + 'px serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(emoji, 0, 0);
-    }
+    paintDino(type, size, color);
     ctx.restore();
   }
 
@@ -669,7 +721,7 @@
       ctx.save();
       ctx.translate(r.x, r.y + bob);
       if (r.dir < 0) ctx.scale(-1, 1); // face travel direction
-      drawSprite(r.emoji, r.tint, 0, 0, r.size, 0, 1);
+      drawSprite(r.type, r.tint || r.color, 0, 0, r.size, 0, 1);
       ctx.restore();
       if (r.x < -r.size * 1.5 || r.x > W + r.size * 1.5) roamers.splice(i, 1);
     }
@@ -690,7 +742,7 @@
       ctx.fillStyle = d.hue;
       ctx.beginPath(); ctx.arc(d.x, d.y, d.size * 0.6 * d.pop, 0, TAU); ctx.fill();
       ctx.restore();
-      drawSprite(d.emoji, d.tint, d.x, d.y, d.size * d.pop * ease, d.rot, alpha);
+      drawSprite(d.type, d.tint || d.color, d.x, d.y, d.size * d.pop * ease, d.rot, alpha);
       if (d.letter) {
         ctx.save();
         ctx.globalAlpha = alpha;
