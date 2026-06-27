@@ -6,9 +6,15 @@ A super-simple dinosaur game for little kids who love to **mash the keyboard** a
 Made just for Daniel: there's no way to lose, no menus to get stuck in, and
 every key and click does something fun.
 
+## 🌐 Play online
+
+Once GitHub Pages is enabled for this repo, the game is live at:
+**https://fwzorren-sudo.github.io/Daniel-Game/** — just open that link on any
+phone, tablet, or computer. No install needed.
+
 ## ▶ How to play
 
-1. Open **`dino-rawr.html`** by double-clicking it (any web browser works —
+1. Open **`index.html`** by double-clicking it (any web browser works —
    Chrome, Edge, Safari, Firefox).
 2. You'll see the **Daniel-saurus Rawr!** title screen — tap the big **▶ Tap to Play!** button (or tap anywhere).
 3. Let Daniel go wild:
