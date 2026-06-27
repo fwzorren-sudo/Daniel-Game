@@ -573,7 +573,7 @@
     dinoCount++; counterEl.textContent = dinoCount;
     if (dinoCount % 100 === 0) {        // little milestone celebration
       fx('chime');
-      confettiBurst(W / 2, H * 0.4, 90);
+      confettiBurst(W / 2, H * 0.4, 90, 'stars');
       emojiBurst(W / 2, H * 0.4);
     }
   }
@@ -686,22 +686,58 @@
   }
 
   // confetti modeled on canvas-confetti physics (origin/spread/velocity/gravity)
-  function confettiBurst(x, y, count) {
+  // a few different burst flavours so every hit doesn't look the same
+  const CONFETTI_PALETTES = {
+    rainbow: CONFETTI_COLORS,
+    gold:    ['#ffd166','#ffb703','#fff3b0','#ffd23f','#ffffff'],
+    cool:    ['#4cc9f0','#06d6a0','#9b5de5','#a0e7ff','#ffffff'],
+    warm:    ['#ff5d8f','#ff7b00','#ffd166','#ef476f','#ffd23f'],
+  };
+  const BURST_STYLES = ['classic','fountain','ring','streamers','bubbles','stars'];
+  function confettiBurst(x, y, count, style) {
+    style = style || pick(BURST_STYLES);
     count = count || 26;
-    const spread = 360, startVel = rnd(7, 12);
     for (let i = 0; i < count; i++) {
-      const ang = rnd(0, TAU);
-      const v = startVel * rnd(0.4, 1);
+      let ang, v, g, decay, size, shape, color, life, vrot;
+      if (style === 'fountain') {            // party-popper: shoots up, rains down
+        ang = -Math.PI / 2 + rnd(-0.7, 0.7); v = rnd(10, 17);
+        g = 0.55; decay = 0.95; size = rnd(7, 14);
+        shape = pick(['square','ribbon','circle']); color = pick(CONFETTI_PALETTES.rainbow);
+        life = rnd(1.1, 2.0); vrot = rnd(-0.4, 0.4);
+      } else if (style === 'ring') {         // clean expanding shockwave ring
+        ang = (i / count) * TAU; v = rnd(8.5, 10.5);
+        g = 0.12; decay = 0.97; size = rnd(6, 11);
+        shape = pick(['circle','star']); color = pick(CONFETTI_PALETTES.cool);
+        life = rnd(0.9, 1.5); vrot = rnd(-0.2, 0.2);
+      } else if (style === 'streamers') {    // slow fluttering ribbons
+        ang = rnd(0, TAU); v = rnd(4, 9);
+        g = 0.18; decay = 0.9; size = rnd(10, 20);
+        shape = 'ribbon'; color = pick(CONFETTI_PALETTES.warm);
+        life = rnd(1.4, 2.4); vrot = rnd(-0.5, 0.5);
+      } else if (style === 'bubbles') {      // translucent bubbles drifting up
+        ang = -Math.PI / 2 + rnd(-0.9, 0.9); v = rnd(2.5, 6);
+        g = -0.05; decay = 0.98; size = rnd(10, 24);
+        shape = 'bubble'; color = pick(CONFETTI_PALETTES.cool);
+        life = rnd(1.4, 2.6); vrot = rnd(-0.1, 0.1);
+      } else if (style === 'stars') {        // big gold star pop
+        ang = rnd(0, TAU); v = rnd(5, 12);
+        g = 0.25; decay = 0.93; size = rnd(10, 22);
+        shape = 'star'; color = pick(CONFETTI_PALETTES.gold);
+        life = rnd(1.1, 2.0); vrot = rnd(-0.3, 0.3);
+      } else {                               // classic mixed confetti
+        ang = rnd(0, TAU); v = rnd(7, 12) * rnd(0.4, 1);
+        g = 0.35; decay = 0.92; size = rnd(7, 15);
+        shape = pick(['square','circle','star']); color = pick(CONFETTI_PALETTES.rainbow);
+        life = rnd(1.0, 1.8); vrot = rnd(-0.3, 0.3);
+      }
+      const up = (style === 'ring' || style === 'fountain' || style === 'bubbles') ? 0 : rnd(2, 5);
       parts.push({
         x, y,
         vx: Math.cos(ang) * v,
-        vy: Math.sin(ang) * v - rnd(2, 5),
-        g: 0.35, decay: 0.92,
-        size: rnd(7, 15),
-        color: pick(CONFETTI_COLORS),
-        rot: rnd(0, TAU), vrot: rnd(-0.3, 0.3),
-        shape: pick(['square','circle','star']),
-        born: now, life: rnd(1.0, 1.8),
+        vy: Math.sin(ang) * v - up,
+        g, decay, size, color,
+        rot: rnd(0, TAU), vrot,
+        shape, born: now, life,
       });
     }
     if (parts.length > 700) parts.splice(0, parts.length - 700); // cap for frantic mashing
@@ -1069,6 +1105,16 @@
       ctx.fillStyle = p.color;
       if (p.shape === 'circle') { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, TAU); ctx.fill(); }
       else if (p.shape === 'star') { star(ctx, p.size * 0.7); ctx.fill(); }
+      else if (p.shape === 'ribbon') { ctx.fillRect(-p.size * 0.18, -p.size * 0.6, p.size * 0.36, p.size * 1.2); }
+      else if (p.shape === 'bubble') {
+        ctx.globalAlpha = alpha * 0.45;
+        ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, TAU); ctx.fill();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1, p.size * 0.08);
+        ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, TAU); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.beginPath(); ctx.arc(-p.size * 0.18, -p.size * 0.18, p.size * 0.11, 0, TAU); ctx.fill();
+      }
       else ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
       ctx.restore();
       if (age > p.life || p.y > H + 40) parts.splice(i, 1);

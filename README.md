@@ -17,7 +17,9 @@ every key and click does something fun.
      brontosaurus, velociraptor, ankylosaurus, spinosaurus, parasaurolophus, and
      pteranodon.
    - **Press a letter or number** → it also appears **HUGE** and colorful (sneaky early learning!)
-   - **Click / tap anywhere** → confetti, eggs, stars, and hearts burst out 🎉🥚⭐❤️
+   - **Click / tap anywhere** → a surprise burst: every tap picks a different
+     style — classic confetti, a party-popper fountain, an expanding ring,
+     fluttering streamers, floating bubbles, or a gold star-pop 🎉⭐🫧
    - **Friendly dinos walk across the screen** on their own — click one to make it jump and roar!
 
 That's it. No installing, no internet needed — it even works offline.
