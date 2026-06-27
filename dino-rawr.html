@@ -431,14 +431,24 @@
     return true;
   }
   // Species-aware roar: play this dino's family clip; fall back to synth.
+  let suppressNextRoar = false;       // lets the welcome roar replace the spawn roar
   function roar(type) {
     const ac = ensureAudio(); if (!ac || !settings.sound) return;
+    if (suppressNextRoar) { suppressNextRoar = false; return; }
     if (activeRoars >= 6) return;    // already plenty roaring; skip this one
     const fam = VOICE_FAMILY[type] || 'bellow';
     const set = FAMILY_CLIPS[fam];
     const id = Math.random() < 0.75 ? set.short : set.long;
     if (playClipById(id, ac)) return;
     synthRoar();                      // clips not ready yet -> synth this one
+  }
+  // a big mighty T-rex roar to greet Daniel on tap (waits for the clip to
+  // finish decoding, then falls back to a synth roar if it never does)
+  function welcomeRoar(tries) {
+    const ac = ensureAudio(); if (!ac || !settings.sound) return;
+    if (playClipById('trex_long', ac)) return;
+    if ((tries || 0) < 12) setTimeout(() => welcomeRoar((tries || 0) + 1), 120);
+    else synthRoar();
   }
 
   // ---- short sound effects (clicks, sparkles, poofs, squeaks, whooshes).
@@ -1245,9 +1255,11 @@
     const el = document.documentElement;
     const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
     if (req) { try { req.call(el); } catch (e) {} }
-    // welcome splash
+    // welcome splash: a center dino + a big mighty T-rex roar to greet Daniel
     confettiBurst(W / 2, H / 2, 60);
+    suppressNextRoar = true;
     spawnDino(W / 2, H / 2);
+    welcomeRoar(0);
     markInput();
     // fade the grown-up hint after a few seconds
     setTimeout(() => { exitHint.style.opacity = '0'; }, 6000);
