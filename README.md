@@ -46,7 +46,9 @@ That's it. No installing, no internet needed — it even works offline.
   download). It all works offline.
 - Things you'll hear: tap empty space for a **pop** or **shimmer**, boop a dino
   for a cute **squeak**, dinos **poof** as they fade, and roamers **whoosh** in.
-- Tap the **speaker button** (🔊) in the top-right to mute or unmute.
+- **Background music** plays a gentle looping theme that matches the scene —
+  sunny, volcano, night, or snowy. Adjust it (or turn it off) in the grown-up menu.
+- Tap the **speaker button** (🔊) in the top-right to mute or unmute everything.
 
 ## 👀 For grown-ups
 
@@ -55,9 +57,9 @@ Open it by **holding the bottom-right corner for about a second**, or pressing
 **Ctrl + Shift + P** — both are hard for a toddler to trigger by accident.
 Everything you change is saved automatically for next time.
 
-- **Sliders:** Volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge)
-- **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow)
-- **Toggles:** Sound effects, Big letters & numbers, Roaming dinos, Surprises when idle
+- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge)
+- **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
+- **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle
 - **Buttons:** Reset count, Fullscreen, Done
 
 ### Other niceties
@@ -78,7 +80,9 @@ clips embedded as base64 and decoded with the Web Audio API (grouped into voice
 families, with a weighted short/long pick per press); the gameplay effects
 (pops, poofs, squeaks, whooshes, shimmers) are recorded clips too — two
 variants each, picked at random — with a synthesized pop as a first-press
-fallback. The confetti physics are modeled on the
+fallback. Each scene also has its own looping background-music track (mono,
+embedded), decoded on first use and cross-faded in when the scene changes. The
+confetti physics are modeled on the
 [`canvas-confetti`](https://github.com/catdad/canvas-confetti) library
 (origin / spread / velocity / gravity) but re-implemented inline so the file
 stays completely offline-friendly.
