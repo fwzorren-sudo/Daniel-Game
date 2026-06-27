@@ -121,6 +121,14 @@
   #menu .btns button:active { transform:translateY(2px); }
   #menu .tip { font-size:12px; color:#9aa4b5; margin-top:16px; text-align:center; line-height:1.5; }
   #menu :focus-visible { outline:3px solid #4cc9f0; outline-offset:2px; }
+  #menu .bgrow { flex-wrap:wrap; }
+  .bgpick { display:flex; gap:8px; flex-wrap:wrap; }
+  .bgpick button {
+    border:2px solid transparent; border-radius:12px; padding:7px 11px; cursor:pointer;
+    font-size:13px; font-weight:700; color:#2c3a52; background:#eef1f6;
+  }
+  .bgpick button.sel { border-color:#ff5d8f; background:#fff0f5; }
+  .bgpick button:active { transform:translateY(1px); }
 </style>
 </head>
 <body>
@@ -163,6 +171,11 @@
           <input type="range" id="optSize" min="0" max="100" step="1">
           <div class="ends"><span>Small</span><span>Huge</span></div>
         </div>
+      </div>
+
+      <div class="row bgrow">
+        <span>Background</span>
+        <div class="bgpick" id="optBg"></div>
       </div>
 
       <div class="row">
@@ -209,7 +222,7 @@
 
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
-                     sound: true, letters: true, roamers: true, idle: true };
+                     sound: true, letters: true, roamers: true, idle: true, bg: 'sunny' };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -513,7 +526,7 @@
   }
 
   // ============================================================= sprites
-  const POP_EMOJI = ['🥚','⭐','💥','❤️','🌟','🍃','🌺','🦴','✨','🌈'];
+  const POP_EMOJI = ['🥚','🦴','🐾','🍃','🌿','🦕','🦖','🌋','⭐','✨'];
   const LETTER_COLORS = ['#ff5d8f','#ffb703','#06d6a0','#4cc9f0','#9b5de5','#ff7b00','#ef476f','#118ab2'];
   const CONFETTI_COLORS = ['#ff5d8f','#ffd166','#06d6a0','#4cc9f0','#9b5de5','#ff7b00','#ffffff'];
 
@@ -670,26 +683,114 @@
   }
 
   // ============================================================= drawing
-  function drawScenery() {
-    // soft sun
-    ctx.save();
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = '#fff7c2';
-    ctx.beginPath(); ctx.arc(W * 0.84, H * 0.16, 55, 0, TAU); ctx.fill();
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath(); ctx.arc(W * 0.84, H * 0.16, 80, 0, TAU); ctx.fill();
+  // ---- backgrounds / scenery themes ----
+  function sun(x, y, r, c) {
+    ctx.save(); ctx.fillStyle = c;
+    ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.45; ctx.beginPath(); ctx.arc(x, y, r * 1.45, 0, TAU); ctx.fill();
     ctx.restore();
-    // a couple of clouds
-    cloud(W * 0.2, H * 0.18, 1);
-    cloud(W * 0.55, H * 0.1, 0.7);
   }
-  function cloud(x, y, s) {
+  function cloud(x, y, s, col) {
     ctx.save();
-    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    ctx.fillStyle = col || 'rgba(255,255,255,.9)';
     for (const [dx, dy, r] of [[0,0,30],[34,6,26],[-30,8,24],[8,-16,24]]) {
       ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, r * s, 0, TAU); ctx.fill();
     }
     ctx.restore();
+  }
+
+  const THEMES = {
+    sunny: {
+      sky: 'linear-gradient(#7ec8ff 0%, #bdeaff 55%, #d6f3ff 70%, #7ed957 70%, #5cba3a 100%)',
+      scene() { sun(W*0.84, H*0.16, 55, '#fff7c2'); cloud(W*0.2, H*0.18, 1); cloud(W*0.55, H*0.1, 0.7); },
+    },
+    volcano: {
+      sky: 'linear-gradient(#ff7a4d 0%, #ffb07a 45%, #ffd0a0 70%, #5b3a2e 70%, #2e1d17 100%)',
+      ambient: 'ember',
+      scene() {
+        sun(W*0.82, H*0.18, 50, '#ffe8a0');
+        // volcano mountain rising from the ground line (~70% height)
+        const gy = H*0.7, vx = W*0.62, bw = Math.min(W*0.5, 460), h = Math.min(H*0.34, 300);
+        ctx.save();
+        ctx.fillStyle = '#4a3128';
+        ctx.beginPath(); ctx.moveTo(vx-bw/2, gy); ctx.lineTo(vx-bw*0.14, gy-h);
+        ctx.lineTo(vx+bw*0.14, gy-h); ctx.lineTo(vx+bw/2, gy); ctx.closePath(); ctx.fill();
+        // lava cap + drips
+        ctx.fillStyle = '#ff5a2b';
+        ctx.beginPath(); ctx.moveTo(vx-bw*0.16, gy-h+4);
+        ctx.lineTo(vx+bw*0.16, gy-h+4); ctx.lineTo(vx+bw*0.1, gy-h+22);
+        ctx.lineTo(vx+bw*0.02, gy-h+10); ctx.lineTo(vx-bw*0.06, gy-h+26);
+        ctx.lineTo(vx-bw*0.13, gy-h+12); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ffd23f';
+        ctx.beginPath(); ctx.ellipse(vx, gy-h+4, bw*0.16, 7, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+        cloud(W*0.22, H*0.16, 0.9, 'rgba(120,90,80,.55)');
+      },
+    },
+    night: {
+      sky: 'linear-gradient(#0b1f4d 0%, #233169 55%, #2b2f5e 70%, #1f3c28 70%, #14301c 100%)',
+      ambient: 'star',
+      scene() {
+        // moon with a soft halo
+        ctx.save(); ctx.fillStyle = '#eef3ff';
+        ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(W*0.82, H*0.18, 70, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(W*0.82, H*0.18, 46, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#d8e0f5';
+        ctx.beginPath(); ctx.arc(W*0.80, H*0.155, 9, 0, TAU);
+        ctx.arc(W*0.835, H*0.2, 6, 0, TAU); ctx.fill();
+        ctx.restore();
+        cloud(W*0.25, H*0.2, 0.8, 'rgba(40,55,100,.6)');
+      },
+    },
+    snowy: {
+      sky: 'linear-gradient(#bfe3ff 0%, #e3f3ff 55%, #f4fbff 70%, #eef6fb 70%, #d6e6f0 100%)',
+      ambient: 'snow',
+      scene() {
+        sun(W*0.84, H*0.16, 48, '#fffdf0');
+        cloud(W*0.22, H*0.18, 1, 'rgba(255,255,255,.95)');
+        cloud(W*0.58, H*0.12, 0.75, 'rgba(255,255,255,.95)');
+      },
+    },
+  };
+  const THEME_ORDER = ['sunny','volcano','night','snowy'];
+  const THEME_LABEL = { sunny:'☀️ Sunny', volcano:'🌋 Volcano', night:'🌙 Night', snowy:'❄️ Snowy' };
+
+  // gentle ambient bits (falling snow / rising embers) tied to the theme
+  const ambient = [];
+  function stepAmbient(dt, kind) {
+    // top up
+    const want = kind === 'snow' ? 70 : kind === 'ember' ? 26 : 0;
+    while (ambient.length < want) {
+      if (kind === 'snow') ambient.push({k:'snow', x:rnd(0,W), y:rnd(-H,H), r:rnd(1.5,4), vy:rnd(20,55), vx:rnd(-12,12), ph:rnd(0,TAU)});
+      else ambient.push({k:'ember', x:W*0.62 + rnd(-30,30), y:H*0.4 + rnd(-20,20), r:rnd(1.5,3.5), vy:-rnd(20,50), vx:rnd(-14,14), life:rnd(1.5,3.2), age:0});
+    }
+    for (let i = ambient.length - 1; i >= 0; i--) {
+      const a = ambient[i];
+      if (a.k !== kind) { ambient.splice(i,1); continue; }
+      if (a.k === 'snow') {
+        a.ph += dt*2; a.x += (a.vx + Math.sin(a.ph)*8)*dt; a.y += a.vy*dt;
+        if (a.y > H+5) { a.y = -5; a.x = rnd(0,W); }
+        ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, TAU); ctx.fill(); ctx.restore();
+      } else {
+        a.age += dt; a.x += a.vx*dt; a.y += a.vy*dt;
+        const al = Math.max(0, 1 - a.age/a.life);
+        if (al <= 0) { ambient.splice(i,1); continue; }
+        ctx.save(); ctx.globalAlpha = al; ctx.fillStyle = a.age%1 < 0.5 ? '#ffd23f' : '#ff7a2b';
+        ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, TAU); ctx.fill(); ctx.restore();
+      }
+    }
+  }
+
+  function drawScenery(dt) {
+    const t = THEMES[settings.bg] || THEMES.sunny;
+    t.scene();
+    if (t.ambient) stepAmbient(dt, t.ambient); else if (ambient.length) ambient.length = 0;
+  }
+  function applyTheme() {
+    const t = THEMES[settings.bg] || THEMES.sunny;
+    document.body.style.background = t.sky;
+    ambient.length = 0;
   }
 
   function drawEmoji(emoji, x, y, size, rot, alpha) {
@@ -733,7 +834,7 @@
     last = ts; now += dt;
 
     ctx.clearRect(0, 0, W, H);
-    drawScenery();
+    drawScenery(dt);
 
     // attract mode: surprise the kiddo if he's wandered off
     // pace slider maps to how long we wait and how often surprises come
@@ -851,6 +952,17 @@
   const optLetters = document.getElementById('optLetters');
   const optRoam = document.getElementById('optRoam');
   const optIdle = document.getElementById('optIdle');
+  const optBg = document.getElementById('optBg');
+
+  // build the background chips
+  THEME_ORDER.forEach((key) => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.dataset.bg = key; btn.textContent = THEME_LABEL[key];
+    btn.addEventListener('click', () => {
+      settings.bg = key; applyTheme(); saveSettings(); syncMenuUI();
+    });
+    optBg.appendChild(btn);
+  });
 
   let menuOpen = false;
   function syncMenuUI() {
@@ -861,6 +973,8 @@
     optLetters.checked = settings.letters;
     optRoam.checked = settings.roamers;
     optIdle.checked = settings.idle;
+    optBg.querySelectorAll('button').forEach((b) =>
+      b.classList.toggle('sel', b.dataset.bg === settings.bg));
   }
   function openMenu() { menuOpen = true; syncMenuUI(); menu.hidden = false; }
   function closeMenu() { menuOpen = false; menu.hidden = true; saveSettings(); }
@@ -887,6 +1001,7 @@
   menu.addEventListener('pointerdown', (e) => { if (e.target === menu) closeMenu(); });
 
   applySound();   // reflect the saved sound setting on the mute button now
+  applyTheme();    // apply the saved background
 
   // ============================================================= input
   let started = false;

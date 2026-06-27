@@ -47,6 +47,7 @@ Open it by **holding the bottom-right corner for about a second**, or pressing
 Everything you change is saved automatically for next time.
 
 - **Sliders:** Volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge)
+- **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow)
 - **Toggles:** Sound effects, Big letters & numbers, Roaming dinos, Surprises when idle
 - **Buttons:** Reset count, Fullscreen, Done
 
