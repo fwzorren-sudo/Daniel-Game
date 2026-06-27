@@ -12,8 +12,10 @@ every key and click does something fun.
    Chrome, Edge, Safari, Firefox).
 2. Tap the big **▶ Tap to Play!** button.
 3. Let Daniel go wild:
-   - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** Five hand-drawn
-     species: brontosaurus, T-rex, stegosaurus, triceratops, and pterodactyl.
+   - **Mash any key** → a cartoon dinosaur pops up with a **RAWR!** Nine full-color
+     species covering every major family: T-rex, triceratops, stegosaurus,
+     brontosaurus, velociraptor, ankylosaurus, spinosaurus, parasaurolophus, and
+     pteranodon.
    - **Press a letter or number** → it also appears **HUGE** and colorful (sneaky early learning!)
    - **Click / tap anywhere** → confetti, eggs, stars, and hearts burst out 🎉🥚⭐❤️
    - **Friendly dinos walk across the screen** on their own — click one to make it jump and roar!
@@ -25,7 +27,7 @@ That's it. No installing, no internet needed — it even works offline.
 - **🦕 Dino counter** (top-left): counts every dinosaur Daniel makes. How high can he go?
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
-  - **Tap a dinosaur** to splash it with a bright color!
+  - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
   - Tap the 🎨 button again to turn it off and wipe the painting clean.
 - **Different dino voices:** big dinos give a deep stompy roar, little ones do a
   cute baby chirp — every roar sounds a bit different.
@@ -62,8 +64,10 @@ Everything you change is saved automatically for next time.
 ## 🛠️ Under the hood
 
 A single self-contained HTML file — plain HTML5 Canvas + the Web Audio API,
-**zero dependencies, zero build step**. All sounds are synthesized live in the
-browser (no audio files). The confetti physics are modeled on the
+**zero dependencies, zero build step**. The dinosaurs are nine SVG sprites
+(traced from freshly-generated, license-free art) embedded right in the file
+and tinted with a canvas hue-shift for color mode. All sounds are synthesized
+live in the browser (no audio files). The confetti physics are modeled on the
 [`canvas-confetti`](https://github.com/catdad/canvas-confetti) library
 (origin / spread / velocity / gravity) but re-implemented inline so the file
 stays completely offline-friendly.
