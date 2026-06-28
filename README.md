@@ -12,6 +12,11 @@ Once GitHub Pages is enabled for this repo, the game is live at:
 **https://fwzorren-sudo.github.io/Daniel-Game/** — just open that link on any
 phone, tablet, or computer. No install needed.
 
+**Install it like an app (optional):** open that link, then use your browser's
+**"Add to Home Screen"** (or "Install"). It gets its own dino icon, launches
+**full-screen** with no browser bars, and — thanks to a built-in service worker —
+**keeps working even with no internet** after the first visit.
+
 ## ▶ How to play
 
 1. Open **`index.html`** by double-clicking it (any web browser works —
@@ -35,7 +40,8 @@ That's it. No installing, no internet needed — it even works offline.
 ## ✨ Things to try
 
 - **🦕 Dino counter** (top-left): ticks up for every dinosaur Daniel makes *and*
-  every one he taps or clicks — keyboard, mouse, or touch all score. How high can he go?
+  every one he taps or clicks — keyboard, mouse, or touch all score. A 🏆 shows
+  his **best-ever score**, saved between visits. How high can he go?
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!

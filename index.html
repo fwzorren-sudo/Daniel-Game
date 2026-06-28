@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Daniel-saurus Rawr! 🦖</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f3a51a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daniel-saurus">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 <style>
   :root { --sky1:#7ec8ff; --sky2:#bdeaff; --grass:#7ed957; }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -42,6 +50,7 @@
     font-size:30px; font-weight:bold; color:#3a3a3a; line-height:1;
   }
   #counter .n { color:#ff5d8f; min-width:1ch; }
+  #counter .best { font-size:18px; color:#e0a93a; margin-left:12px; display:flex; align-items:center; gap:3px; font-weight:bold; }
 
   /* ---- Exit hint (for grown-ups) ---- */
   #exitHint {
@@ -147,7 +156,7 @@
 <body>
   <canvas id="paint"></canvas>
   <canvas id="game"></canvas>
-  <div id="counter" title="Dinos made">🦕<span class="n">0</span></div>
+  <div id="counter" title="Dinos made">🦕<span class="n">0</span><span class="best" title="Best ever">🏆<span class="b">0</span></span></div>
   <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
   <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
   <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
@@ -241,13 +250,14 @@
   const paintBtn = document.getElementById('paintBtn');
   const sceneBtn = document.getElementById('sceneBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
+  const bestEl = document.getElementById('counter').querySelector('.b');
   const exitHint = document.getElementById('exitHint');
   const menu = document.getElementById('menu');
 
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5 };
+                     music: true, musicVol: 0.5, best: 0 };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -256,6 +266,10 @@
   function saveSettings() {
     try { localStorage.setItem('danielSaurus', JSON.stringify(settings)); } catch (e) {}
   }
+  bestEl.textContent = settings.best || 0;   // show the saved record
+  // make sure the record survives a close / tab switch
+  window.addEventListener('pagehide', saveSettings);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSettings(); });
 
   let W = 0, H = 0, DPR = 1;
   function resize() {
@@ -416,12 +430,12 @@
     for (const id in ROAR_B64) decodeOne(ac, ROAR_B64[id], ROAR_BUFFERS, id);
     for (const id in FX_B64)   decodeOne(ac, FX_B64[id],   FX_BUFFERS,   id);
   }
-  function playClipById(id, ac) {
+  function playClipById(id, ac, rate) {
     const buf = ROAR_BUFFERS[id];
     if (!buf) return false;          // not decoded yet
     const src = ac.createBufferSource();
     src.buffer = buf;
-    src.playbackRate.value = rnd(0.94, 1.07);   // subtle variety so repeats differ
+    src.playbackRate.value = rate || rnd(0.94, 1.07);   // size-based depth, or subtle random variety
     const g = ac.createGain();
     g.gain.value = 0.9;
     src.connect(g).connect(master);
@@ -432,14 +446,14 @@
   }
   // Species-aware roar: play this dino's family clip; fall back to synth.
   let suppressNextRoar = false;       // lets the welcome roar replace the spawn roar
-  function roar(type) {
+  function roar(type, rate) {
     const ac = ensureAudio(); if (!ac || !settings.sound) return;
     if (suppressNextRoar) { suppressNextRoar = false; return; }
     if (activeRoars >= 6) return;    // already plenty roaring; skip this one
     const fam = VOICE_FAMILY[type] || 'bellow';
     const set = FAMILY_CLIPS[fam];
     const id = Math.random() < 0.75 ? set.short : set.long;
-    if (playClipById(id, ac)) return;
+    if (playClipById(id, ac, rate)) return;
     synthRoar();                      // clips not ready yet -> synth this one
   }
   // a big mighty T-rex roar to greet Daniel on tap (waits for the clip to
@@ -591,10 +605,14 @@
   let dinoCount = 0;
   function bumpCounter() {
     dinoCount++; counterEl.textContent = dinoCount;
+    if (dinoCount > settings.best) {    // new personal record (kept between visits)
+      settings.best = dinoCount; bestEl.textContent = settings.best;
+    }
     if (dinoCount % 100 === 0) {        // little milestone celebration
       fx('chime');
       confettiBurst(W / 2, H * 0.4, 90, 'stars');
       emojiBurst(W / 2, H * 0.4);
+      saveSettings();                   // checkpoint the record every 100
     }
   }
 
@@ -828,7 +846,8 @@
     emojiBurst(x, y);
     if (hit) {                                   // tap a dino: grow + scoot, and pop on the 3rd tap
       hit.clicks = (hit.clicks || 0) + 1;
-      roar(hit.type); fx('squeak'); bumpCounter();
+      const deep = Math.max(0.72, Math.min(1.08, 1.12 - hit.size / 650)); // bigger dino → deeper roar
+      roar(hit.type, deep); fx('squeak'); bumpCounter();
       if (hit.clicks >= 3) {                     // third tap → pop!
         confettiBurst(hit.x, hit.y, 34);
         emojiBurst(hit.x, hit.y);
