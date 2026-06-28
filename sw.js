@@ -1,5 +1,5 @@
 // Daniel-saurus Rawr! — offline service worker
-const CACHE = 'daniel-saurus-v1';
+const CACHE = 'daniel-saurus-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -23,18 +23,22 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// cache-first, fall back to network (and cache it), fall back to the game when offline
+// stale-while-revalidate: serve the cached copy instantly (works offline), and
+// refresh it from the network in the background so the next launch is current.
+// (GitHub Pages sends ETags, so the background check is a cheap 304 when nothing
+// changed, and only re-downloads when the game has actually been updated.)
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== location.origin) return; // leave cross-origin alone
   e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit || fetch(e.request).then((resp) => {
-        if (resp && resp.ok && new URL(e.request.url).origin === location.origin) {
-          const copy = resp.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
-        }
-        return resp;
-      }).catch(() => caches.match('./index.html'))
+    caches.open(CACHE).then((cache) =>
+      cache.match(e.request).then((cached) => {
+        const fromNet = fetch(e.request).then((resp) => {
+          if (resp && resp.ok) cache.put(e.request, resp.clone());
+          return resp;
+        }).catch(() => cached || cache.match('./index.html'));
+        return cached || fromNet; // instant cache when we have it; otherwise wait for network
+      })
     )
   );
 });

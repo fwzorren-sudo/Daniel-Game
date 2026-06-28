@@ -200,6 +200,13 @@
           <div class="ends"><span>Small</span><span>Huge</span></div>
         </div>
       </div>
+      <div class="row">
+        <span>On-screen dinos</span>
+        <div>
+          <input type="range" id="optMax" min="8" max="28" step="1">
+          <div class="ends"><span>Few (smoother)</span><span>Lots</span></div>
+        </div>
+      </div>
 
       <div class="row bgrow">
         <span>Background</span>
@@ -229,6 +236,7 @@
 
       <div class="btns">
         <button id="optReset">Reset count</button>
+        <button id="optResetBest">Reset best</button>
         <button id="optFull">Fullscreen</button>
         <button id="optClose" class="primary">Done</button>
       </div>
@@ -257,7 +265,7 @@
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5, best: 0 };
+                     music: true, musicVol: 0.5, best: 0, maxDinos: 16 };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -447,8 +455,8 @@
   // Species-aware roar: play this dino's family clip; fall back to synth.
   let suppressNextRoar = false;       // lets the welcome roar replace the spawn roar
   function roar(type, rate) {
+    if (suppressNextRoar) { suppressNextRoar = false; return; }  // consume first, even if muted
     const ac = ensureAudio(); if (!ac || !settings.sound) return;
-    if (suppressNextRoar) { suppressNextRoar = false; return; }
     if (activeRoars >= 6) return;    // already plenty roaring; skip this one
     const fam = VOICE_FAMILY[type] || 'bellow';
     const set = FAMILY_CLIPS[fam];
@@ -688,7 +696,7 @@
   const parts = [];     // confetti particles
   const floaters = [];  // emoji bursts (eggs/stars) from clicks
 
-  const MAX_DINOS = 16; // auto-clear keeps the screen from overcrowding (and keeps modest computers smooth)
+  // on-screen dino cap is adjustable in the grown-up menu (settings.maxDinos)
 
   const sizeScale = () => 0.6 + settings.size * 1.0; // 0.6x .. 1.6x
   function spawnDino(x, y, letter, skipCount) {
@@ -709,7 +717,7 @@
       hueShift: 0,              // degrees; set in color mode
       clicks: 0,                // taps so far; 3 makes it pop
     });
-    if (dinos.length > MAX_DINOS) dinos.shift(); // drop oldest
+    if (dinos.length > settings.maxDinos) dinos.shift(); // drop oldest
     if (!skipCount) bumpCounter(); // auto-spawned dinos don't pad his score
     roar(type);
   }
@@ -1232,6 +1240,7 @@
   const optBg = document.getElementById('optBg');
   const optMusic = document.getElementById('optMusic');
   const optMusicVol = document.getElementById('optMusicVol');
+  const optMax = document.getElementById('optMax');
 
   // build the background chips
   THEME_ORDER.forEach((key) => {
@@ -1254,6 +1263,7 @@
     optIdle.checked = settings.idle;
     optMusic.checked = settings.music;
     optMusicVol.value = Math.round(settings.musicVol * 100);
+    optMax.value = settings.maxDinos;
     optBg.querySelectorAll('button').forEach((b) =>
       b.classList.toggle('sel', b.dataset.bg === settings.bg));
   }
@@ -1270,9 +1280,13 @@
   optIdle.addEventListener('change', () => { settings.idle = optIdle.checked; saveSettings(); });
   optMusic.addEventListener('change', () => { settings.music = optMusic.checked; applyMusic(); saveSettings(); });
   optMusicVol.addEventListener('input', () => { settings.musicVol = optMusicVol.value / 100; applyMusic(); });
+  optMax.addEventListener('input', () => { settings.maxDinos = +optMax.value; saveSettings(); });
 
   document.getElementById('optReset').addEventListener('click', () => {
     dinoCount = 0; counterEl.textContent = '0';
+  });
+  document.getElementById('optResetBest').addEventListener('click', () => {
+    settings.best = 0; bestEl.textContent = '0'; saveSettings();
   });
   document.getElementById('optFull').addEventListener('click', () => {
     const el = document.documentElement;

@@ -78,10 +78,10 @@ Open it by **holding the bottom-right corner for about a second**, or pressing
 **Ctrl + Shift + P** — both are hard for a toddler to trigger by accident.
 Everything you change is saved automatically for next time.
 
-- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge)
+- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs)
 - **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
 - **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle
-- **Buttons:** Reset count, Fullscreen, Done
+- **Buttons:** Reset count, Reset best (clears the 🏆 record), Fullscreen, Done
 
 ### Other niceties
 - **Auto-tidy:** old dinosaurs gently fade away so the screen never gets too crowded.
