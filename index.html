@@ -212,6 +212,10 @@
         <span>Background</span>
         <div class="bgpick" id="optBg"></div>
       </div>
+      <div class="row">
+        <span>Auto-change background</span>
+        <label class="sw"><input type="checkbox" id="optBgRotate"><span class="track"></span></label>
+      </div>
 
       <div class="row">
         <span>Sound effects</span>
@@ -265,7 +269,7 @@
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5, best: 0, maxDinos: 16 };
+                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -1035,13 +1039,20 @@
     sceneBtn.textContent = THEME_ICON[settings.bg] || '☀️';
     ambient.length = 0;
   }
-  // on-screen button: tap to flip to the next background (Daniel can do this himself)
-  sceneBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  // advance to the next background (used by the button AND the auto-rotate timer)
+  let bgRotTimer = 0;
+  const BG_ROTATE_SECS = 40;   // gentle auto-change cadence when enabled
+  function nextScene() {
     const i = THEME_ORDER.indexOf(settings.bg);
     settings.bg = THEME_ORDER[(i + 1) % THEME_ORDER.length];
     applyTheme(); saveSettings(); playScene();
     if (typeof syncMenuUI === 'function') syncMenuUI();
+    bgRotTimer = 0;   // restart the auto-rotate countdown after any change
+  }
+  // on-screen button: tap to flip to the next background (Daniel can do this himself)
+  sceneBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    nextScene();
     pop();
   });
 
@@ -1108,6 +1119,12 @@
     if (started && settings.idle && !menuOpen && now - lastInput > idleWait) {
       if (attractNext === 0) attractNext = now + gap * rnd(0.4, 0.8);
       if (now >= attractNext) { doAttract(); attractNext = now + gap * rnd(0.7, 1.3); }
+    }
+
+    // auto-rotate the background on a slow timer (grown-ups can switch it off)
+    if (started && settings.bgRotate && !menuOpen) {
+      bgRotTimer += dt;
+      if (bgRotTimer >= BG_ROTATE_SECS) nextScene();
     }
 
     // roamers
@@ -1241,6 +1258,7 @@
   const optMusic = document.getElementById('optMusic');
   const optMusicVol = document.getElementById('optMusicVol');
   const optMax = document.getElementById('optMax');
+  const optBgRotate = document.getElementById('optBgRotate');
 
   // build the background chips
   THEME_ORDER.forEach((key) => {
@@ -1264,6 +1282,7 @@
     optMusic.checked = settings.music;
     optMusicVol.value = Math.round(settings.musicVol * 100);
     optMax.value = settings.maxDinos;
+    optBgRotate.checked = settings.bgRotate;
     optBg.querySelectorAll('button').forEach((b) =>
       b.classList.toggle('sel', b.dataset.bg === settings.bg));
   }
@@ -1281,6 +1300,7 @@
   optMusic.addEventListener('change', () => { settings.music = optMusic.checked; applyMusic(); saveSettings(); });
   optMusicVol.addEventListener('input', () => { settings.musicVol = optMusicVol.value / 100; applyMusic(); });
   optMax.addEventListener('input', () => { settings.maxDinos = +optMax.value; saveSettings(); });
+  optBgRotate.addEventListener('change', () => { settings.bgRotate = optBgRotate.checked; bgRotTimer = 0; saveSettings(); });
 
   document.getElementById('optReset').addEventListener('click', () => {
     dinoCount = 0; counterEl.textContent = '0';
