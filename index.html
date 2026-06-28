@@ -825,9 +825,8 @@
     }
     const burstStyle = confettiBurst(x, y);
     emojiBurst(x, y);
-    if (hit) { kickDino(hit); roar(hit.type); fx('squeak'); } // pet a dino → roar
-    else if (type === 'touch') { suppressNextRoar = true; spawnDino(x, y); if (!fx(BURST_SOUND[burstStyle])) pop(); } // tap empty: a dino pops in + the burst's own sound (not a roar)
-    else { if (!fx(BURST_SOUND[burstStyle])) pop(); } // desktop click: the burst's matched sound
+    if (hit) { kickDino(hit); roar(hit.type); fx('squeak'); bumpCounter(); } // pet a dino → roar + a point
+    else { suppressNextRoar = true; spawnDino(x, y); if (!fx(BURST_SOUND[burstStyle])) pop(); } // click OR tap empty space → a new dino (which scores) + the burst's own sound
   }
 
   // ============================================================= roamers

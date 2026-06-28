@@ -33,7 +33,8 @@ That's it. No installing, no internet needed — it even works offline.
 
 ## ✨ Things to try
 
-- **🦕 Dino counter** (top-left): counts every dinosaur Daniel makes. How high can he go?
+- **🦕 Dino counter** (top-left): ticks up for every dinosaur Daniel makes *and*
+  every one he taps or clicks — keyboard, mouse, or touch all score. How high can he go?
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
