@@ -1339,6 +1339,8 @@
 
     // ignore pure modifier presses
     if (['Shift','Control','Alt','Meta','CapsLock','Tab'].includes(e.key)) return;
+    // a held-down key auto-repeats; spawn just one dino, not an endless stream
+    if (e.repeat) return;
 
     markInput();
     const x = rnd(W * 0.12, W * 0.88);
