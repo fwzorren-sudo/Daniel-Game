@@ -670,7 +670,7 @@
   const parts = [];     // confetti particles
   const floaters = [];  // emoji bursts (eggs/stars) from clicks
 
-  const MAX_DINOS = 26; // auto-clear keeps the screen from overcrowding
+  const MAX_DINOS = 16; // auto-clear keeps the screen from overcrowding (and keeps modest computers smooth)
 
   const sizeScale = () => 0.6 + settings.size * 1.0; // 0.6x .. 1.6x
   function spawnDino(x, y, letter, skipCount) {
@@ -1305,6 +1305,7 @@
   // ---------------------------------------------- keyboard
   // Esc, then Shift+Q quits fullscreen (grown-up escape hatch).
   let escArmed = false, escTimer = null;
+  let lastKeySpawn = 0, lastBigText = 0; // throttle frantic key-mashing
 
   window.addEventListener('keydown', (e) => {
     // Grown-up menu: Ctrl+Shift+P (hard to hit by random mashing)
@@ -1341,6 +1342,9 @@
     if (['Shift','Control','Alt','Meta','CapsLock','Tab'].includes(e.key)) return;
     // a held-down key auto-repeats; spawn just one dino, not an endless stream
     if (e.repeat) return;
+    // throttle frantic mashing so the screen (and a modest computer) keeps up
+    if (now - lastKeySpawn < 0.09) return;   // ~11 dinos/sec max
+    lastKeySpawn = now;
 
     markInput();
     const x = rnd(W * 0.12, W * 0.88);
@@ -1349,7 +1353,8 @@
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       const ch = e.key.toUpperCase();
       spawnDino(x, y, settings.letters ? ch : null);
-      if (settings.letters) spawnBigText(ch);
+      // big floating letters/numbers are an occasional treat, not one per key
+      if (settings.letters && now - lastBigText > 0.9) { spawnBigText(ch); lastBigText = now; }
     } else {
       spawnDino(x, y);
     }
