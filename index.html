@@ -1307,10 +1307,20 @@
   let escArmed = false, escTimer = null;
   let lastKeySpawn = 0, lastBigText = 0; // throttle frantic key-mashing
 
+  // block the right-click / long-press menu (no "Save as / Inspect" escape route)
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
+
   window.addEventListener('keydown', (e) => {
     // Grown-up menu: Ctrl+Shift+P (hard to hit by random mashing)
     if (e.ctrlKey && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
       e.preventDefault(); toggleMenu(); return;
+    }
+    // Block browser shortcuts that open trapping dialogs/pages: save, print,
+    // find, view-source, open-file, downloads, bookmark. (F12 / Ctrl+W / new-tab
+    // are reserved by the browser and can't be cancelled — use kiosk mode for those.)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey &&
+        ['s','p','f','g','u','o','j','d'].includes(e.key.toLowerCase())) {
+      e.preventDefault(); return;
     }
     if (menuOpen) { // while the menu is open, keys don't spawn dinos
       if (e.key === 'Escape') closeMenu();
