@@ -26,8 +26,9 @@ phone, tablet, or computer. No install needed.
    - **Click / tap anywhere** → a surprise burst: every tap picks a different
      style — classic confetti, a party-popper fountain, an expanding ring,
      fluttering streamers, floating bubbles, or a gold star-pop 🎉⭐🫧
-   - **Friendly dinos walk across the screen** on their own — and **tapping any
-     dinosaur sends it tumbling off** in a random direction with a roar and a squeak!
+   - **Friendly dinos walk across the screen** on their own. **Tap a dinosaur** and
+     it **grows bigger** with a roar and a squeak — tap the **same one 3 times** and
+     it **POPS** in a burst of confetti! Every tap scores a point.
 
 That's it. No installing, no internet needed — it even works offline.
 

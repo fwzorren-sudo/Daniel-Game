@@ -689,6 +689,7 @@
       accent: pick(LETTER_COLORS), // letter outline color
       letter: letter || null,
       hueShift: 0,              // degrees; set in color mode
+      clicks: 0,                // taps so far; 3 makes it pop
     });
     if (dinos.length > MAX_DINOS) dinos.shift(); // drop oldest
     if (!skipCount) bumpCounter(); // auto-spawned dinos don't pad his score
@@ -825,7 +826,24 @@
     }
     const burstStyle = confettiBurst(x, y);
     emojiBurst(x, y);
-    if (hit) { kickDino(hit); roar(hit.type); fx('squeak'); bumpCounter(); } // pet a dino → roar + a point
+    if (hit) {                                   // tap a dino: grow + scoot, and pop on the 3rd tap
+      hit.clicks = (hit.clicks || 0) + 1;
+      roar(hit.type); fx('squeak'); bumpCounter();
+      if (hit.clicks >= 3) {                     // third tap → pop!
+        confettiBurst(hit.x, hit.y, 34);
+        emojiBurst(hit.x, hit.y);
+        fx('poof');
+        let i = dinos.indexOf(hit);
+        if (i >= 0) dinos.splice(i, 1);
+        else { i = roamers.indexOf(hit); if (i >= 0) roamers.splice(i, 1); }
+      } else {
+        hit.size = Math.min(hit.size * 1.3, 380);   // grow bigger
+        const a = rnd(0, TAU), sp = rnd(1.5, 3);     // a gentle nudge — stays catchable for the next tap
+        if (hit.baseY !== undefined) hit.vy = -8;    // roamers: a little hop
+        else { hit.vx = Math.cos(a) * sp; hit.vy = Math.sin(a) * sp; }
+        hit.vrot = rnd(-0.3, 0.3);                   // fun spin
+      }
+    }
     else { suppressNextRoar = true; spawnDino(x, y); if (!fx(BURST_SOUND[burstStyle])) pop(); } // click OR tap empty space → a new dino (which scores) + the burst's own sound
   }
 
@@ -846,6 +864,7 @@
       vy: 0,
       dir,
       step: rnd(0, TAU), // for a little walking bob
+      clicks: 0,         // taps so far; 3 makes it pop
     });
     fx('whoosh');
   }
