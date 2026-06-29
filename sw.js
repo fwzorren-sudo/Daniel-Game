@@ -1,5 +1,5 @@
 // Daniel-saurus Rawr! — offline service worker
-const CACHE = 'daniel-saurus-v2';
+const CACHE = 'daniel-saurus-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -23,22 +23,30 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// stale-while-revalidate: serve the cached copy instantly (works offline), and
-// refresh it from the network in the background so the next launch is current.
-// (GitHub Pages sends ETags, so the background check is a cheap 304 when nothing
-// changed, and only re-downloads when the game has actually been updated.)
+// Network-first for the page itself, so updates ALWAYS show when online; the
+// cache is only the offline fallback. Static assets (icons/manifest) are
+// cache-first since they rarely change. This avoids "I pushed an update but
+// still see the old version" — the live HTML is fetched fresh every online load
+// (cheap 304 from GitHub when unchanged), and offline still works from cache.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   if (new URL(e.request.url).origin !== location.origin) return; // leave cross-origin alone
-  e.respondWith(
-    caches.open(CACHE).then((cache) =>
-      cache.match(e.request).then((cached) => {
-        const fromNet = fetch(e.request).then((resp) => {
-          if (resp && resp.ok) cache.put(e.request, resp.clone());
+  const isDoc = e.request.mode === 'navigate' || e.request.destination === 'document';
+  if (isDoc) {
+    e.respondWith(
+      fetch(e.request).then((resp) => {
+        if (resp && resp.ok) { const copy = resp.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
+        return resp;
+      }).catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html')))
+    );
+  } else {
+    e.respondWith(
+      caches.match(e.request).then((hit) =>
+        hit || fetch(e.request).then((resp) => {
+          if (resp && resp.ok) { const copy = resp.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
           return resp;
-        }).catch(() => cached || cache.match('./index.html'));
-        return cached || fromNet; // instant cache when we have it; otherwise wait for network
-      })
-    )
-  );
+        }).catch(() => undefined)
+      )
+    );
+  }
 });
