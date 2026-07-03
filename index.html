@@ -1362,6 +1362,7 @@
     const el = document.documentElement;
     const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
     if (req) { try { req.call(el); } catch (e) {} }
+    lockKeyboard();   // capture browser-reserved keys while fullscreen (Chrome/Edge)
     // welcome splash: a center dino + a big mighty T-rex roar to greet Daniel
     confettiBurst(W / 2, H / 2, 60);
     suppressNextRoar = true;
@@ -1409,19 +1410,47 @@
 
   // block the right-click / long-press menu (no "Save as / Inspect" escape route)
   window.addEventListener('contextmenu', (e) => e.preventDefault());
+  // the browser menu bar activates on Alt/F10 KEYUP — swallow those too
+  window.addEventListener('keyup', (e) => {
+    if (['Alt', 'Meta', 'F10', 'ContextMenu'].includes(e.key)) e.preventDefault();
+  });
+  // mouse side/middle buttons (back/forward) and drag-drop can navigate away
+  window.addEventListener('auxclick', (e) => e.preventDefault());
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => e.preventDefault());
+  // Back-button trap: keep one dummy history entry so Back lands right back here
+  try { history.pushState(null, ''); } catch (e) {}
+  window.addEventListener('popstate', () => { try { history.pushState(null, ''); } catch (e) {} });
+
+  // Keyboard Lock (Chrome/Edge, works while fullscreen): captures even the
+  // browser-reserved combos — Ctrl+W/T/N, Escape, the Windows key — and hands
+  // them to the page instead. Grown-ups still exit by press-and-HOLDING Esc
+  // (a browser escape hatch nothing can block) or Esc then Shift+Q.
+  function lockKeyboard() {
+    try {
+      if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock().catch(() => {});
+    } catch (e) {}
+  }
+  document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) lockKeyboard(); });
 
   window.addEventListener('keydown', (e) => {
     // Grown-up menu: Ctrl+Shift+P (hard to hit by random mashing)
     if (e.ctrlKey && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
       e.preventDefault(); toggleMenu(); return;
     }
-    // Block browser shortcuts that open trapping dialogs/pages: save, print,
-    // find, view-source, open-file, downloads, bookmark. (F12 / Ctrl+W / new-tab
-    // are reserved by the browser and can't be cancelled — use kiosk mode for those.)
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey &&
-        ['s','p','f','g','u','o','j','d'].includes(e.key.toLowerCase())) {
-      e.preventDefault(); return;
-    }
+    // Block keys/combos that open browser UI: menus (Alt, F10, Alt+letter
+    // accelerators), help (F1), find (F3), dev tools (F12, Ctrl+Shift+I/J/C),
+    // address bar (Ctrl+L/K/E), and dialog shortcuts (save/print/find/history/
+    // downloads/bookmarks...). Ctrl+W/T/N are browser-reserved and only become
+    // blockable under the fullscreen Keyboard Lock below — listed anyway so
+    // they're swallowed when the lock is active.
+    const kk = e.key.toLowerCase();
+    if (
+      ['f1','f3','f6','f7','f10','f12','alt','meta','contextmenu'].includes(kk) ||
+      (e.altKey && e.key.length === 1) ||
+      ((e.ctrlKey || e.metaKey) && !e.altKey &&
+        ['s','p','f','g','u','o','j','d','h','l','k','e','b','i','c','t','n','w','delete'].includes(kk))
+    ) { e.preventDefault(); return; }
     if (menuOpen) { // while the menu is open, keys don't spawn dinos
       if (e.key === 'Escape') closeMenu();
       return;

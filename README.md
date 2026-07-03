@@ -86,9 +86,12 @@ Everything you change is saved automatically for next time.
 ### Other niceties
 - **Auto-tidy:** old dinosaurs gently fade away so the screen never gets too crowded.
 - **Escape-proof:** the game fills the screen and swallows accidental key presses
-  so a toddler can't easily click away or close things.
-- **To quit fullscreen:** press **Esc**, then **Shift + Q**. (Or just close the
-  browser tab.)
+  and clicks — browser menus (Alt, F10, Alt+letter), help/find/dev-tools keys,
+  address-bar shortcuts, right-click, the Back button, mouse side-buttons, and
+  drag-drop are all blocked. In fullscreen on Chrome/Edge it also uses Keyboard
+  Lock to capture even Ctrl+W / Ctrl+T / the Windows key.
+- **To quit fullscreen:** press **Esc**, then **Shift + Q** — or **press and
+  HOLD Esc** (the browser's own escape hatch, always works).
 - Works great on a laptop *and* on a touchscreen tablet.
 
 ## 🛠️ Under the hood
