@@ -47,6 +47,11 @@ That's it. No installing, no internet needed — it even works offline.
   them gently back (no way to lose). Clear the board for a starry celebration and
   a fresh set of eggs. Each pair scores a point; a grown-up slider sets 2–6 pairs.
   Tap the egg button again to go back to smashing.
+- **🔤 Letter hunt** (top-right abc button): a big letter appears and the game
+  **says it out loud** — find it among four tiles by **tapping it or pressing the
+  key on the keyboard!** Right answers bring a dino stampede; wrong guesses just
+  wiggle. Every 5 in a row earns an extra celebration. (The matching tile is the
+  same color as the big letter — a friendly hint.)
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
@@ -85,7 +90,7 @@ Everything you change is saved automatically for next time.
 
 - **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Matching pairs (2 easy ↔ 6 tricky, for the 🥚 game)
 - **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
-- **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle, Auto-change background (cycles the scene every ~40s)
+- **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle, Auto-change background (cycles the scene every ~40s), Speak letters aloud (the browser's voice says each letter — in smash mode and the letter hunt)
 - **Buttons:** Reset count, Reset best (clears the 🏆 record), Fullscreen, Done
 
 ### Other niceties

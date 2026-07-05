@@ -40,6 +40,8 @@
   #paintBtn { right:84px; }
   #sceneBtn { right:154px; }
   #matchBtn { right:224px; }
+  #huntBtn { right:294px; }
+  #huntBtn.on { background:#c9f0ff; box-shadow:0 4px 0 #3d9dc4; }
   #matchBtn.on { background:#ffe9a8; box-shadow:0 4px 0 #d9a300; }
   #paintBtn.on { background:#ffd166; box-shadow:0 4px 0 #d9a300; }
 
@@ -159,6 +161,7 @@
   <canvas id="paint"></canvas>
   <canvas id="game"></canvas>
   <div id="counter" title="Dinos made">🦕<span class="n">0</span><span class="best" title="Best ever">🏆<span class="b">0</span></span></div>
+  <button id="huntBtn" class="btn" title="Letter hunt game" aria-label="Letter hunt game">🔤</button>
   <button id="matchBtn" class="btn" title="Egg matching game" aria-label="Egg matching game">🥚</button>
   <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
   <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
@@ -226,6 +229,10 @@
         <span>Auto-change background</span>
         <label class="sw"><input type="checkbox" id="optBgRotate"><span class="track"></span></label>
       </div>
+      <div class="row">
+        <span>Speak letters aloud</span>
+        <label class="sw"><input type="checkbox" id="optSpeak"><span class="track"></span></label>
+      </div>
 
       <div class="row">
         <span>Sound effects</span>
@@ -272,6 +279,7 @@
   const paintBtn = document.getElementById('paintBtn');
   const sceneBtn = document.getElementById('sceneBtn');
   const matchBtn = document.getElementById('matchBtn');
+  const huntBtn = document.getElementById('huntBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
   const bestEl = document.getElementById('counter').querySelector('.b');
   const exitHint = document.getElementById('exitHint');
@@ -280,7 +288,7 @@
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3 };
+                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3, speak: true };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -595,6 +603,19 @@
     musicGain.gain.setTargetAtTime(tgt, ac.currentTime, 0.15);
   }
 
+  // say a letter/number out loud with the browser's built-in voice
+  function speak(text) {
+    if (!settings.speak || !settings.sound) return;
+    try {
+      if (!('speechSynthesis' in window)) return;
+      speechSynthesis.cancel();               // a fresh letter interrupts the old one
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1.15;
+      u.volume = Math.max(0.2, Math.min(1, settings.volume));
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
   function pop() {
     const ac = ensureAudio(); if (!ac || !settings.sound) return;
     const t = ac.currentTime;
@@ -884,6 +905,7 @@
   function clickAt(x, y, type) {
     markInput();
     if (matchMode) { matchTap(x, y); return; }
+    if (huntMode) { huntTap(x, y); return; }
     const hit = dinoAt(x, y);
     if (paintMode) {
       paintDot(x, y);
@@ -936,6 +958,7 @@
     match.first = null; match.lockUntil = 0; match.flipA = null; match.flipB = null; match.celebrateAt = 0;
   }
   function enterMatch() {
+    if (huntMode) exitHunt();
     matchMode = true; matchBtn.classList.add('on');
     if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
     dinos.length = 0; bigText.length = 0;   // clear the stage for the egg grid
@@ -1039,6 +1062,136 @@
         ctx.fill(); ctx.stroke();
         drawSprite(c.type, 0, 0, 0, (c.w * 0.88) / 1.5, 0, 1);
       }
+      ctx.restore();
+    }
+  }
+
+  // ============================================================= letter hunt
+  // "Find the B!" — the target letter shows big at the top (and is spoken
+  // aloud); four letter tiles sit below. Tap the right tile or press the key
+  // on the keyboard. Wrong guesses just wiggle — no way to lose.
+  let huntMode = false;
+  const HUNT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', HUNT_DIGITS = '0123456789';
+  const hunt = { target: 'A', tiles: [], nextAt: 0, streak: 0 };
+  function newHuntRound() {
+    const pool = Math.random() < 0.75 ? HUNT_LETTERS : HUNT_DIGITS;
+    const chars = [];
+    while (chars.length < 4) { const c = pool[(Math.random() * pool.length) | 0]; if (chars.indexOf(c) < 0) chars.push(c); }
+    hunt.target = chars[0];
+    for (let i = chars.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = chars[i]; chars[i] = chars[j]; chars[j] = t; }
+    hunt.tiles = chars.map((c) => ({ ch: c, wob: rnd(0, TAU), shake: 0, solvedAt: 0, x: 0, y: 0, s: 10 }));
+    hunt.nextAt = 0;
+    speak('Find the ' + hunt.target + '!');
+  }
+  function enterHunt() {
+    if (matchMode) exitMatch();
+    huntMode = true; huntBtn.classList.add('on');
+    if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
+    dinos.length = 0; bigText.length = 0;
+    hunt.streak = 0;
+    newHuntRound(); fx('whoosh'); markInput();
+  }
+  function exitHunt() {
+    huntMode = false; huntBtn.classList.remove('on');
+    try { speechSynthesis.cancel(); } catch (e) {}
+    markInput();
+  }
+  huntBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (huntMode) exitHunt(); else enterHunt();
+    pop();
+  });
+  function huntCorrect(tile) {
+    hunt.nextAt = now + 1.3;
+    tile.solvedAt = now;
+    hunt.streak++;
+    bumpCounter();
+    confettiBurst(tile.x, tile.y, 30, 'stars');
+    fx('shimmer'); speak('Yay!');
+    for (let i = 0; i < 3; i++) spawnDino(rnd(W * 0.2, W * 0.8), rnd(H * 0.12, H * 0.38), null, true);
+    if (hunt.streak % 5 === 0) { fx('chime'); confettiBurst(W / 2, H * 0.4, 70, 'stars'); }  // every 5th: extra hurrah
+  }
+  function huntTap(x, y) {
+    if (hunt.nextAt) { confettiBurst(x, y, 10); return; }     // between rounds
+    for (const t of hunt.tiles) {
+      if (Math.abs(t.x - x) < t.s / 2 && Math.abs(t.y - y) < t.s / 2) {
+        if (t.ch === hunt.target) huntCorrect(t);
+        else { t.shake = 1; fx('squeak'); }
+        return;
+      }
+    }
+    confettiBurst(x, y, 10); if (!fx('pop')) pop();
+    speak(hunt.target + '!');                                  // tap anywhere: hear it again
+  }
+  function huntKey(k) {
+    if (hunt.nextAt) return;
+    if (!/^[a-zA-Z0-9]$/.test(k)) { confettiBurst(rnd(W * 0.2, W * 0.8), rnd(H * 0.2, H * 0.6), 10); return; }
+    const K = k.toUpperCase();
+    if (K === hunt.target) {
+      const t = hunt.tiles.filter((t) => t.ch === K)[0];
+      huntCorrect(t || hunt.tiles[0]);
+    } else {
+      const t = hunt.tiles.filter((t) => t.ch === K)[0];
+      if (t) t.shake = 1;
+      confettiBurst(rnd(W * 0.2, W * 0.8), rnd(H * 0.45, H * 0.75), 8); fx('squeak');
+    }
+  }
+  function stepHunt(dt) {
+    if (!huntMode) return;
+    if (hunt.nextAt && now >= hunt.nextAt) newHuntRound();
+    // layout: 4 tiles in a row (2x2 on narrow screens)
+    const narrow = W < 560;
+    const cols = narrow ? 2 : 4;
+    const s = narrow ? Math.min((W - 60) / 2 - 14, H * 0.22, 180)
+                     : Math.min((W - 80) / 4 - 16, H * 0.30, 200);
+    const gap = 16, rowW = s * cols + gap * (cols - 1);
+    const x0 = (W - rowW) / 2 + s / 2;
+    for (let i = 0; i < hunt.tiles.length; i++) {
+      const t = hunt.tiles[i], r = (i / cols) | 0, k = i % cols;
+      t.s = s;
+      t.x = x0 + k * (s + gap);
+      t.y = narrow ? H * 0.5 + r * (s + gap) : H * 0.62;
+    }
+    // the big target letter up top (wobbling, spoken aloud when it appears)
+    const tSize = Math.min(W, H) * 0.26;
+    const ti = hunt.target.charCodeAt(0) % LETTER_COLORS.length;
+    ctx.save();
+    ctx.translate(W / 2, H * 0.22);
+    ctx.rotate(Math.sin(now * 1.6) * 0.05);
+    ctx.font = 'bold ' + tSize + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = tSize * 0.09; ctx.strokeStyle = '#fff';
+    ctx.fillStyle = LETTER_COLORS[ti];
+    ctx.strokeText(hunt.target, 0, 0);
+    ctx.fillText(hunt.target, 0, 0);
+    ctx.restore();
+    // the four tiles
+    for (const t of hunt.tiles) {
+      t.wob += dt * 2;
+      if (t.shake > 0) t.shake = Math.max(0, t.shake - dt * 2.4);
+      let alpha = 1, scale = 1;
+      if (t.solvedAt) {                 // the found tile pops away happily
+        const p = (now - t.solvedAt) / 0.5;
+        if (p > 1) continue;
+        if (p > 0) { alpha = 1 - p; scale = 1 + p * 0.4; }
+      }
+      const sx = t.x + Math.sin(t.shake * 26) * t.shake * 9;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(sx, t.y + Math.sin(t.wob) * 3);
+      ctx.scale(scale, scale);
+      const rw = t.s / 2, rr = Math.min(20, t.s * 0.14);
+      ctx.fillStyle = 'rgba(255,255,255,.93)';
+      ctx.strokeStyle = t.shake > 0 ? '#ef476f' : '#4cc9f0';
+      ctx.lineWidth = Math.max(3, t.s * 0.045);
+      ctx.beginPath();
+      ctx.moveTo(-rw + rr, -rw); ctx.arcTo(rw, -rw, rw, rw, rr); ctx.arcTo(rw, rw, -rw, rw, rr);
+      ctx.arcTo(-rw, rw, -rw, -rw, rr); ctx.arcTo(-rw, -rw, rw, -rw, rr); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.font = 'bold ' + (t.s * 0.62) + 'px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = LETTER_COLORS[t.ch.charCodeAt(0) % LETTER_COLORS.length];
+      ctx.fillText(t.ch, 0, t.s * 0.02);
       ctx.restore();
     }
   }
@@ -1280,7 +1433,7 @@
     // pace slider maps to how long we wait and how often surprises come
     const idleWait = 12 - settings.pace * 8;          // 12s (calm) .. 4s (lively)
     const gap = 8 - settings.pace * 5.5;              // 8s (calm) .. 2.5s (lively)
-    if (started && settings.idle && !menuOpen && !matchMode && now - lastInput > idleWait) {
+    if (started && settings.idle && !menuOpen && !matchMode && !huntMode && now - lastInput > idleWait) {
       if (attractNext === 0) attractNext = now + gap * rnd(0.4, 0.8);
       if (now >= attractNext) { doAttract(); attractNext = now + gap * rnd(0.7, 1.3); }
     }
@@ -1295,7 +1448,7 @@
     roamTimer += dt;
     if (roamTimer > roamEvery && roamers.length < 5) {
       roamTimer = 0; roamEvery = rnd(2.5, 5.5);
-      if (settings.roamers && !matchMode) spawnRoamer();
+      if (settings.roamers && !matchMode && !huntMode) spawnRoamer();
     }
     for (let i = roamers.length - 1; i >= 0; i--) {
       const r = roamers[i];
@@ -1344,6 +1497,7 @@
     }
 
     stepMatch(dt);
+    stepHunt(dt);
 
     // big letters/numbers
     for (let i = bigText.length - 1; i >= 0; i--) {
@@ -1426,6 +1580,7 @@
   const optMax = document.getElementById('optMax');
   const optBgRotate = document.getElementById('optBgRotate');
   const optPairs = document.getElementById('optPairs');
+  const optSpeak = document.getElementById('optSpeak');
 
   // build the background chips
   THEME_ORDER.forEach((key) => {
@@ -1451,6 +1606,7 @@
     optMax.value = settings.maxDinos;
     optBgRotate.checked = settings.bgRotate;
     optPairs.value = settings.matchPairs;
+    optSpeak.checked = settings.speak;
     optBg.querySelectorAll('button').forEach((b) =>
       b.classList.toggle('sel', b.dataset.bg === settings.bg));
   }
@@ -1470,6 +1626,7 @@
   optMax.addEventListener('input', () => { settings.maxDinos = +optMax.value; saveSettings(); });
   optBgRotate.addEventListener('change', () => { settings.bgRotate = optBgRotate.checked; bgRotTimer = 0; saveSettings(); });
   optPairs.addEventListener('input', () => { settings.matchPairs = +optPairs.value; saveSettings(); if (matchMode) dealMatch(); });
+  optSpeak.addEventListener('change', () => { settings.speak = optSpeak.checked; saveSettings(); if (settings.speak) speak('Hello!'); });
 
   document.getElementById('optReset').addEventListener('click', () => {
     dinoCount = 0; counterEl.textContent = '0';
@@ -1629,12 +1786,13 @@
     const x = rnd(W * 0.12, W * 0.88);
     const y = rnd(H * 0.18, H * 0.62);
     if (matchMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
+    if (huntMode) { huntKey(e.key); return; }
 
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       const ch = e.key.toUpperCase();
       spawnDino(x, y, settings.letters ? ch : null);
       // big floating letters/numbers are an occasional treat, not one per key
-      if (settings.letters && now - lastBigText > 0.9) { spawnBigText(ch); lastBigText = now; }
+      if (settings.letters && now - lastBigText > 0.9) { spawnBigText(ch); lastBigText = now; speak(ch); }
     } else {
       spawnDino(x, y);
     }
