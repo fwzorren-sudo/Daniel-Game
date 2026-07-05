@@ -42,6 +42,11 @@ That's it. No installing, no internet needed — it even works offline.
 - **🦕 Dino counter** (top-left): ticks up for every dinosaur Daniel makes *and*
   every one he taps or clicks — keyboard, mouse, or touch all score. A 🏆 shows
   his **best-ever score**, saved between visits. How high can he go?
+- **🥚 Egg matching game** (top-right egg button): the screen fills with dinosaur
+  eggs — tap two to peek inside and **find the matching pairs!** A miss just flips
+  them gently back (no way to lose). Clear the board for a starry celebration and
+  a fresh set of eggs. Each pair scores a point; a grown-up slider sets 2–6 pairs.
+  Tap the egg button again to go back to smashing.
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
@@ -78,7 +83,7 @@ Open it by **holding the bottom-right corner for about a second**, or pressing
 **Ctrl + Shift + P** — both are hard for a toddler to trigger by accident.
 Everything you change is saved automatically for next time.
 
-- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs)
+- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Matching pairs (2 easy ↔ 6 tricky, for the 🥚 game)
 - **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
 - **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle, Auto-change background (cycles the scene every ~40s)
 - **Buttons:** Reset count, Reset best (clears the 🏆 record), Fullscreen, Done

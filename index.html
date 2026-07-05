@@ -39,6 +39,8 @@
   #mute  { right:14px; }
   #paintBtn { right:84px; }
   #sceneBtn { right:154px; }
+  #matchBtn { right:224px; }
+  #matchBtn.on { background:#ffe9a8; box-shadow:0 4px 0 #d9a300; }
   #paintBtn.on { background:#ffd166; box-shadow:0 4px 0 #d9a300; }
 
   /* ---- Dino counter badge ---- */
@@ -157,6 +159,7 @@
   <canvas id="paint"></canvas>
   <canvas id="game"></canvas>
   <div id="counter" title="Dinos made">🦕<span class="n">0</span><span class="best" title="Best ever">🏆<span class="b">0</span></span></div>
+  <button id="matchBtn" class="btn" title="Egg matching game" aria-label="Egg matching game">🥚</button>
   <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
   <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
   <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
@@ -208,6 +211,13 @@
         </div>
       </div>
 
+      <div class="row">
+        <span>Matching pairs (🥚 game)</span>
+        <div>
+          <input type="range" id="optPairs" min="2" max="6" step="1">
+          <div class="ends"><span>2 (easy)</span><span>6 (tricky)</span></div>
+        </div>
+      </div>
       <div class="row bgrow">
         <span>Background</span>
         <div class="bgpick" id="optBg"></div>
@@ -261,6 +271,7 @@
   const muteBtn = document.getElementById('mute');
   const paintBtn = document.getElementById('paintBtn');
   const sceneBtn = document.getElementById('sceneBtn');
+  const matchBtn = document.getElementById('matchBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
   const bestEl = document.getElementById('counter').querySelector('.b');
   const exitHint = document.getElementById('exitHint');
@@ -269,7 +280,7 @@
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true };
+                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3 };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -872,6 +883,7 @@
 
   function clickAt(x, y, type) {
     markInput();
+    if (matchMode) { matchTap(x, y); return; }
     const hit = dinoAt(x, y);
     if (paintMode) {
       paintDot(x, y);
@@ -906,6 +918,129 @@
       }
     }
     else { suppressNextRoar = true; spawnDino(x, y); if (!fx(BURST_SOUND[burstStyle])) pop(); } // click OR tap empty space → a new dino (which scores) + the burst's own sound
+  }
+
+  // ============================================================= egg match
+  // A toddler memory game: eggs hide dinosaurs, find the pairs. Tap the egg
+  // button to switch between smash mode and matching mode. No fail state —
+  // a miss just flips the eggs gently back down.
+  let matchMode = false;
+  const match = { cards: [], first: null, lockUntil: 0, flipA: null, flipB: null, celebrateAt: 0 };
+  function dealMatch() {
+    const pairs = Math.max(2, Math.min(6, (settings.matchPairs | 0) || 3));
+    const types = DINO_TYPES.slice();
+    for (let i = types.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = types[i]; types[i] = types[j]; types[j] = t; }
+    const deck = types.slice(0, pairs).concat(types.slice(0, pairs));
+    for (let i = deck.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
+    match.cards = deck.map((t) => ({ type: t, up: false, flip: 0, solved: false, solvedAt: 0, wob: rnd(0, TAU), x: 0, y: 0, w: 10, h: 10 }));
+    match.first = null; match.lockUntil = 0; match.flipA = null; match.flipB = null; match.celebrateAt = 0;
+  }
+  function enterMatch() {
+    matchMode = true; matchBtn.classList.add('on');
+    if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
+    dinos.length = 0; bigText.length = 0;   // clear the stage for the egg grid
+    dealMatch(); fx('whoosh'); markInput();
+  }
+  function exitMatch() {
+    matchMode = false; matchBtn.classList.remove('on');
+    match.cards.length = 0; match.first = null; markInput();
+  }
+  matchBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (matchMode) exitMatch(); else enterMatch();
+    pop();
+  });
+  // grid layout, recomputed every frame so rotation/resize just work
+  function matchLayout() {
+    const n = match.cards.length; if (!n) return;
+    const cols = n <= 4 ? 2 : n <= 6 ? 3 : 4;
+    const rows = Math.ceil(n / cols);
+    const top = 100, bottom = H * 0.06, gap = 14;
+    const availW = W - 48, availH = H - top - bottom;
+    let ch = Math.min(availH / rows - gap, 280), cw = ch * 0.78;
+    if (cw * cols + gap * (cols - 1) > availW) { cw = (availW - gap * (cols - 1)) / cols; ch = cw / 0.78; }
+    const gridW = cw * cols + gap * (cols - 1), gridH = ch * rows + gap * (rows - 1);
+    const x0 = (W - gridW) / 2, y0 = top + Math.max(0, (availH - gridH) / 2);
+    for (let i = 0; i < n; i++) {
+      const c = match.cards[i], r = (i / cols) | 0, k = i % cols;
+      c.x = x0 + k * (cw + gap) + cw / 2; c.y = y0 + r * (ch + gap) + ch / 2; c.w = cw; c.h = ch;
+    }
+  }
+  function matchTap(x, y) {
+    if (match.celebrateAt || now < match.lockUntil) return;
+    let hit = null;
+    for (const c of match.cards) {
+      if (!c.solved && Math.abs(c.x - x) < c.w / 2 && Math.abs(c.y - y) < c.h / 2) { hit = c; break; }
+    }
+    if (!hit) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }  // missed the eggs: tiny sparkle
+    if (hit.up) { fx('squeak'); return; }                                  // already open
+    hit.up = true;
+    roar(hit.type);                                                        // the egg cracks: hello!
+    if (!match.first) { match.first = hit; return; }
+    const a = match.first; match.first = null;
+    if (a.type === hit.type) {          // ---- a pair!
+      a.solved = hit.solved = true; a.solvedAt = hit.solvedAt = now + 0.55; // linger, then hop away
+      bumpCounter();
+      confettiBurst(a.x, a.y, 22); confettiBurst(hit.x, hit.y, 22); fx('shimmer');
+      if (match.cards.every((c) => c.solved)) match.celebrateAt = now + 0.9;
+    } else {                            // ---- not a match: peek, then flip back
+      match.lockUntil = now + 1.0; match.flipA = a; match.flipB = hit;
+    }
+  }
+  function drawEgg(w, h, sx) {
+    ctx.save(); ctx.scale(Math.max(sx, 0.001), 1);
+    ctx.fillStyle = '#fdf6e3'; ctx.strokeStyle = '#d9c9a3'; ctx.lineWidth = Math.max(2, w * 0.035);
+    ctx.beginPath(); ctx.ellipse(0, h * 0.03, w * 0.40, h * 0.44, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(150,195,120,.5)';
+    ctx.beginPath(); ctx.ellipse(-w * 0.13, -h * 0.14, w * 0.075, h * 0.055, 0.4, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(w * 0.11, h * 0.06, w * 0.06, h * 0.045, -0.3, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-w * 0.03, h * 0.24, w * 0.05, h * 0.038, 0.2, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  function stepMatch(dt) {
+    if (!matchMode) return;
+    matchLayout();
+    // pending flip-back after a miss
+    if (match.flipA && now >= match.lockUntil) {
+      match.flipA.up = false; match.flipB.up = false;
+      match.flipA = null; match.flipB = null; fx('poof');
+    }
+    // board cleared: celebrate and re-deal
+    if (match.celebrateAt && now >= match.celebrateAt) {
+      match.celebrateAt = 0;
+      fx('chime');
+      confettiBurst(W / 2, H * 0.4, 80, 'stars'); emojiBurst(W / 2, H * 0.4);
+      dealMatch();
+    }
+    for (const c of match.cards) {
+      c.wob += dt * 2;
+      c.flip += ((c.up ? 1 : 0) - c.flip) * Math.min(1, dt * 9);
+      let alpha = 1, scale = 1;
+      if (c.solved) {                    // found pair lingers, then pops away
+        const t = (now - c.solvedAt) / 0.5;
+        if (t > 1) continue;             // gone
+        if (t > 0) { alpha = 1 - t; scale = 1 + t * 0.35; }
+      }
+      const face = c.flip > 0.5, sx = Math.abs(1 - 2 * c.flip);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(c.x, c.y + Math.sin(c.wob) * 2.5);
+      ctx.scale(scale, scale);
+      if (!face) {
+        drawEgg(c.w, c.h, sx);
+      } else {
+        ctx.scale(Math.max(sx, 0.001), 1);   // card un-squishes as it flips open
+        ctx.fillStyle = 'rgba(255,255,255,.92)';
+        ctx.strokeStyle = '#ffd166'; ctx.lineWidth = Math.max(3, c.w * 0.04);
+        ctx.beginPath();
+        const rw = c.w / 2, rh = c.h / 2, rr = Math.min(18, c.w * 0.12);
+        ctx.moveTo(-rw + rr, -rh); ctx.arcTo(rw, -rh, rw, rh, rr); ctx.arcTo(rw, rh, -rw, rh, rr);
+        ctx.arcTo(-rw, rh, -rw, -rh, rr); ctx.arcTo(-rw, -rh, rw, -rh, rr); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        drawSprite(c.type, 0, 0, 0, (c.w * 0.88) / 1.5, 0, 1);
+      }
+      ctx.restore();
+    }
   }
 
   // ============================================================= roamers
@@ -1145,7 +1280,7 @@
     // pace slider maps to how long we wait and how often surprises come
     const idleWait = 12 - settings.pace * 8;          // 12s (calm) .. 4s (lively)
     const gap = 8 - settings.pace * 5.5;              // 8s (calm) .. 2.5s (lively)
-    if (started && settings.idle && !menuOpen && now - lastInput > idleWait) {
+    if (started && settings.idle && !menuOpen && !matchMode && now - lastInput > idleWait) {
       if (attractNext === 0) attractNext = now + gap * rnd(0.4, 0.8);
       if (now >= attractNext) { doAttract(); attractNext = now + gap * rnd(0.7, 1.3); }
     }
@@ -1160,7 +1295,7 @@
     roamTimer += dt;
     if (roamTimer > roamEvery && roamers.length < 5) {
       roamTimer = 0; roamEvery = rnd(2.5, 5.5);
-      if (settings.roamers) spawnRoamer();
+      if (settings.roamers && !matchMode) spawnRoamer();
     }
     for (let i = roamers.length - 1; i >= 0; i--) {
       const r = roamers[i];
@@ -1207,6 +1342,8 @@
       }
       if (age > d.life) { dinos.splice(i, 1); if (Math.random() < 0.5) fx('poof'); }
     }
+
+    stepMatch(dt);
 
     // big letters/numbers
     for (let i = bigText.length - 1; i >= 0; i--) {
@@ -1288,6 +1425,7 @@
   const optMusicVol = document.getElementById('optMusicVol');
   const optMax = document.getElementById('optMax');
   const optBgRotate = document.getElementById('optBgRotate');
+  const optPairs = document.getElementById('optPairs');
 
   // build the background chips
   THEME_ORDER.forEach((key) => {
@@ -1312,6 +1450,7 @@
     optMusicVol.value = Math.round(settings.musicVol * 100);
     optMax.value = settings.maxDinos;
     optBgRotate.checked = settings.bgRotate;
+    optPairs.value = settings.matchPairs;
     optBg.querySelectorAll('button').forEach((b) =>
       b.classList.toggle('sel', b.dataset.bg === settings.bg));
   }
@@ -1330,6 +1469,7 @@
   optMusicVol.addEventListener('input', () => { settings.musicVol = optMusicVol.value / 100; applyMusic(); });
   optMax.addEventListener('input', () => { settings.maxDinos = +optMax.value; saveSettings(); });
   optBgRotate.addEventListener('change', () => { settings.bgRotate = optBgRotate.checked; bgRotTimer = 0; saveSettings(); });
+  optPairs.addEventListener('input', () => { settings.matchPairs = +optPairs.value; saveSettings(); if (matchMode) dealMatch(); });
 
   document.getElementById('optReset').addEventListener('click', () => {
     dinoCount = 0; counterEl.textContent = '0';
@@ -1488,6 +1628,7 @@
     markInput();
     const x = rnd(W * 0.12, W * 0.88);
     const y = rnd(H * 0.18, H * 0.62);
+    if (matchMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
 
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       const ch = e.key.toUpperCase();
