@@ -28,22 +28,32 @@
   #paint { position:fixed; inset:0; display:block; z-index:1; }
   #game  { position:fixed; inset:0; display:block; z-index:2; }
 
-  /* ---- Top buttons ---- */
+  /* ---- Top buttons: a wrapping flex row pinned to the top-right, so on
+         narrow (portrait) screens they shrink and wrap instead of marching
+         left over the score badge ---- */
+  #btns {
+    position:fixed; top:14px; right:14px; z-index:30;
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    max-width:calc(100vw - 200px);   /* leave the score badge its corner */
+  }
   .btn {
-    position:fixed; top:14px; z-index:30;
     width:60px; height:60px; border:none; border-radius:50%;
     background:rgba(255,255,255,.85); box-shadow:0 4px 0 rgba(0,0,0,.18);
-    font-size:30px; cursor:pointer; line-height:1;
+    font-size:30px; cursor:pointer; line-height:1; flex:0 0 auto;
   }
   .btn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.18); }
-  #mute  { right:14px; }
-  #paintBtn { right:84px; }
-  #sceneBtn { right:154px; }
-  #matchBtn { right:224px; }
-  #huntBtn { right:294px; }
   #huntBtn.on { background:#c9f0ff; box-shadow:0 4px 0 #3d9dc4; }
   #matchBtn.on { background:#ffe9a8; box-shadow:0 4px 0 #d9a300; }
   #paintBtn.on { background:#ffd166; box-shadow:0 4px 0 #d9a300; }
+  /* small screens: shrink both the buttons and the score badge */
+  @media (max-width: 560px) {
+    /* cap the row at 3 buttons so they wrap to a second row instead of
+       reaching the score badge */
+    #btns { gap:8px; max-width:162px; }
+    .btn { width:46px; height:46px; font-size:22px; }
+    #counter { height:46px; font-size:21px; padding:0 14px 0 10px; gap:5px; }
+    #counter .best { font-size:13px; margin-left:8px; }
+  }
 
   /* ---- Dino counter badge ---- */
   #counter {
@@ -161,11 +171,13 @@
   <canvas id="paint"></canvas>
   <canvas id="game"></canvas>
   <div id="counter" title="Dinos made">🦕<span class="n">0</span><span class="best" title="Best ever">🏆<span class="b">0</span></span></div>
-  <button id="huntBtn" class="btn" title="Letter hunt game" aria-label="Letter hunt game">🔤</button>
-  <button id="matchBtn" class="btn" title="Egg matching game" aria-label="Egg matching game">🥚</button>
-  <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
-  <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
-  <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
+  <div id="btns">
+    <button id="huntBtn" class="btn" title="Letter hunt game" aria-label="Letter hunt game">🔤</button>
+    <button id="matchBtn" class="btn" title="Egg matching game" aria-label="Egg matching game">🥚</button>
+    <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
+    <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
+    <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
+  </div>
   <div id="exitHint">Grown-ups: press <b>Esc</b> then <b>Shift</b>+<b>Q</b> to quit</div>
 
   <div id="start">
