@@ -628,6 +628,18 @@
     } catch (e) {}
   }
 
+  // a rotating cheer so praise never gets repetitive (no immediate repeats)
+  const PRAISE = ['Yay!', 'You did it!', 'Great job!', 'Woo hoo!', 'Awesome!',
+                  'Hooray!', 'Super!', 'You found it!', 'Way to go!', 'Dino-mite!',
+                  'Great job, Daniel!', 'You did it, Daniel!'];
+  let lastPraise = -1;
+  function cheer() {
+    let i;
+    do { i = (Math.random() * PRAISE.length) | 0; } while (i === lastPraise);
+    lastPraise = i;
+    speak(PRAISE[i]);
+  }
+
   function pop() {
     const ac = ensureAudio(); if (!ac || !settings.sound) return;
     const t = ac.currentTime;
@@ -1016,7 +1028,7 @@
     if (a.type === hit.type) {          // ---- a pair!
       a.solved = hit.solved = true; a.solvedAt = hit.solvedAt = now + 0.55; // linger, then hop away
       bumpCounter();
-      confettiBurst(a.x, a.y, 22); confettiBurst(hit.x, hit.y, 22); fx('shimmer');
+      confettiBurst(a.x, a.y, 22); confettiBurst(hit.x, hit.y, 22); fx('shimmer'); cheer();
       if (match.cards.every((c) => c.solved)) match.celebrateAt = now + 0.9;
     } else {                            // ---- not a match: peek, then flip back
       match.lockUntil = now + 1.0; match.flipA = a; match.flipB = hit;
@@ -1045,6 +1057,7 @@
       match.celebrateAt = 0;
       fx('chime');
       confettiBurst(W / 2, H * 0.4, 80, 'stars'); emojiBurst(W / 2, H * 0.4);
+      speak('You found them all!');
       dealMatch();
     }
     for (const c of match.cards) {
@@ -1119,9 +1132,10 @@
     hunt.streak++;
     bumpCounter();
     confettiBurst(tile.x, tile.y, 30, 'stars');
-    fx('shimmer'); speak('Yay!');
+    fx('shimmer');
     for (let i = 0; i < 3; i++) spawnDino(rnd(W * 0.2, W * 0.8), rnd(H * 0.12, H * 0.38), null, true);
-    if (hunt.streak % 5 === 0) { fx('chime'); confettiBurst(W / 2, H * 0.4, 70, 'stars'); }  // every 5th: extra hurrah
+    if (hunt.streak % 5 === 0) { fx('chime'); confettiBurst(W / 2, H * 0.4, 70, 'stars'); speak('Wow! ' + hunt.streak + ' in a row!'); }
+    else cheer();
   }
   function huntTap(x, y) {
     if (hunt.nextAt) { confettiBurst(x, y, 10); return; }     // between rounds
