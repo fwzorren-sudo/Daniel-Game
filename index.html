@@ -233,6 +233,13 @@
           <div class="ends"><span>2 (easy)</span><span>6 (tricky)</span></div>
         </div>
       </div>
+      <div class="row">
+        <span>Letter hunt level (start)</span>
+        <div>
+          <input type="range" id="optHuntLvl" min="1" max="5" step="1">
+          <div class="ends"><span>1 (color match)</span><span>5 (by sound)</span></div>
+        </div>
+      </div>
       <div class="row bgrow">
         <span>Background</span>
         <div class="bgpick" id="optBg"></div>
@@ -300,7 +307,7 @@
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3, speak: true };
+                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3, speak: true, huntLevel: 1 };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -1098,28 +1105,59 @@
   }
 
   // ============================================================= letter hunt
-  // "Find the B!" — the target letter shows big at the top (and is spoken
-  // aloud); four letter tiles sit below. Tap the right tile or press the key
-  // on the keyboard. Wrong guesses just wiggle — no way to lose.
+  // "Find the B!" with an auto-ramping difficulty ladder:
+  //   1: 4 tiles, matching tile shares the target's color (easy color-matching)
+  //   2: 4 tiles, random colors (real shape recognition)
+  //   3: 6 tiles
+  //   4: 6 tiles drawn from look-alike letters (B/P/R/D, O/Q/C/G...)
+  //   5: sound only - the big letter is hidden; find it by its spoken name
+  // Five in a row steps up a rank; two misses in a row gently steps back down.
   let huntMode = false;
   const HUNT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', HUNT_DIGITS = '0123456789';
-  const hunt = { target: 'A', tiles: [], nextAt: 0, streak: 0 };
-  function newHuntRound() {
-    const pool = Math.random() < 0.75 ? HUNT_LETTERS : HUNT_DIGITS;
-    const chars = [];
-    while (chars.length < 4) { const c = pool[(Math.random() * pool.length) | 0]; if (chars.indexOf(c) < 0) chars.push(c); }
+  const HUNT_STAGES = [
+    { tiles: 4, hint: true,  alike: false, show: true  },
+    { tiles: 4, hint: false, alike: false, show: true  },
+    { tiles: 6, hint: false, alike: false, show: true  },
+    { tiles: 6, hint: false, alike: true,  show: true  },
+    { tiles: 4, hint: false, alike: false, show: false },
+  ];
+  const HUNT_RANKS = ['Hatchling', 'Baby Dino', 'Big Dino', 'Giant Dino', 'T-Rex'];
+  const LOOKALIKES = [
+    ['B','P','R','D','E','F'], ['O','Q','C','G','D','U'], ['M','N','W','V','H','K'],
+    ['E','F','H','L','T','I'], ['I','L','T','J','F','Y'], ['U','V','Y','W','N','X'],
+    ['6','9','8','0','3','5'], ['1','7','4','2','5','9'],
+  ];
+  const hunt = { target: 'A', targetCol: '#ff5d8f', tiles: [], nextAt: 0,
+                 streak: 0, stage: 0, miss: 0, pendingAnnounce: '' };
+  function newHuntRound(announce) {
+    const cfg = HUNT_STAGES[hunt.stage];
+    let chars;
+    if (cfg.alike && Math.random() < 0.85) {          // look-alike round
+      const g = LOOKALIKES[(Math.random() * LOOKALIKES.length) | 0].slice();
+      for (let i = g.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = g[i]; g[i] = g[j]; g[j] = t; }
+      chars = g.slice(0, cfg.tiles);
+    } else {
+      const pool = Math.random() < 0.75 ? HUNT_LETTERS : HUNT_DIGITS;
+      chars = [];
+      while (chars.length < cfg.tiles) { const c = pool[(Math.random() * pool.length) | 0]; if (chars.indexOf(c) < 0) chars.push(c); }
+    }
     hunt.target = chars[0];
     for (let i = chars.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = chars[i]; chars[i] = chars[j]; chars[j] = t; }
-    hunt.tiles = chars.map((c) => ({ ch: c, wob: rnd(0, TAU), shake: 0, solvedAt: 0, x: 0, y: 0, s: 10 }));
+    hunt.tiles = chars.map((c) => ({
+      ch: c, wob: rnd(0, TAU), shake: 0, solvedAt: 0, x: 0, y: 0, s: 10,
+      col: cfg.hint ? LETTER_COLORS[c.charCodeAt(0) % LETTER_COLORS.length] : pick(LETTER_COLORS),
+    }));
+    hunt.targetCol = cfg.hint ? LETTER_COLORS[hunt.target.charCodeAt(0) % LETTER_COLORS.length] : pick(LETTER_COLORS);
     hunt.nextAt = 0;
-    speak('Find the ' + hunt.target + '!');
+    speak((announce || '') + 'Find the ' + hunt.target + '!');
   }
   function enterHunt() {
     if (matchMode) exitMatch();
     huntMode = true; huntBtn.classList.add('on');
     if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
     dinos.length = 0; bigText.length = 0;
-    hunt.streak = 0;
+    hunt.streak = 0; hunt.miss = 0; hunt.pendingAnnounce = '';
+    hunt.stage = Math.max(0, Math.min(HUNT_STAGES.length - 1, ((settings.huntLevel | 0) || 1) - 1));
     newHuntRound(); fx('whoosh'); markInput();
   }
   function exitHunt() {
@@ -1135,20 +1173,36 @@
   function huntCorrect(tile) {
     hunt.nextAt = now + 1.3;
     tile.solvedAt = now;
-    hunt.streak++;
+    hunt.streak++; hunt.miss = 0;
     bumpCounter();
     confettiBurst(tile.x, tile.y, 30, 'stars');
     fx('shimmer');
-    for (let i = 0; i < 3; i++) spawnDino(rnd(W * 0.2, W * 0.8), rnd(H * 0.12, H * 0.38), null, true);
-    if (hunt.streak % 5 === 0) { fx('chime'); confettiBurst(W / 2, H * 0.4, 70, 'stars'); speak('Wow! ' + hunt.streak + ' in a row!'); }
-    else cheer();
+    spawnDino(tile.x, tile.y - tile.s * 0.4, null, true);   // a dino stomps in right on the tile
+    for (let i = 0; i < 2; i++) spawnDino(rnd(W * 0.2, W * 0.8), rnd(H * 0.08, H * 0.28), null, true);
+    if (hunt.streak % 5 === 0) {                            // rank time!
+      fx('chime'); confettiBurst(W / 2, H * 0.4, 70, 'stars');
+      if (hunt.stage < HUNT_STAGES.length - 1) {
+        hunt.stage++;
+        hunt.pendingAnnounce = 'Wow! ' + hunt.streak + ' in a row! You are a ' + HUNT_RANKS[hunt.stage] + ' now! ';
+      } else speak('Wow! ' + hunt.streak + ' in a row!');
+    } else cheer();
+  }
+  function huntMiss(tile) {
+    if (tile) tile.shake = 1;
+    fx('squeak');
+    hunt.miss++;
+    if (hunt.miss >= 2) {           // two in a row: ease off and deal a fresh round
+      hunt.miss = 0; hunt.streak = 0;
+      if (hunt.stage > 0) hunt.stage--;
+      newHuntRound("Let's try this one! ");
+    }
   }
   function huntTap(x, y) {
     if (hunt.nextAt) { confettiBurst(x, y, 10); return; }     // between rounds
     for (const t of hunt.tiles) {
       if (Math.abs(t.x - x) < t.s / 2 && Math.abs(t.y - y) < t.s / 2) {
         if (t.ch === hunt.target) huntCorrect(t);
-        else { t.shake = 1; fx('squeak'); }
+        else huntMiss(t);
         return;
       }
     }
@@ -1163,46 +1217,58 @@
       const t = hunt.tiles.filter((t) => t.ch === K)[0];
       huntCorrect(t || hunt.tiles[0]);
     } else {
-      const t = hunt.tiles.filter((t) => t.ch === K)[0];
-      if (t) t.shake = 1;
-      confettiBurst(rnd(W * 0.2, W * 0.8), rnd(H * 0.45, H * 0.75), 8); fx('squeak');
+      confettiBurst(rnd(W * 0.2, W * 0.8), rnd(H * 0.45, H * 0.75), 8);
+      huntMiss(hunt.tiles.filter((t) => t.ch === K)[0] || null);
     }
   }
   function stepHunt(dt) {
     if (!huntMode) return;
-    if (hunt.nextAt && now >= hunt.nextAt) newHuntRound();
-    // layout: 4 tiles in a row (2x2 on narrow screens)
+    if (hunt.nextAt && now >= hunt.nextAt) {
+      const a = hunt.pendingAnnounce; hunt.pendingAnnounce = '';
+      newHuntRound(a);
+    }
+    const cfg = HUNT_STAGES[hunt.stage];
+    // layout: 4 tiles in a row; 6 tiles as 3x2 (2 columns on narrow screens)
+    const n = hunt.tiles.length;
     const narrow = W < 560;
-    const cols = narrow ? 2 : 4;
-    const s = narrow ? Math.min((W - 60) / 2 - 14, H * 0.22, 180)
-                     : Math.min((W - 80) / 4 - 16, H * 0.30, 200);
-    const gap = 16, rowW = s * cols + gap * (cols - 1);
+    const cols = narrow ? 2 : (n <= 4 ? 4 : 3);
+    const rows = Math.ceil(n / cols);
+    const gap = 16;
+    const tilesTop = H * (rows > 1 ? 0.42 : 0.47);
+    const s = Math.min((W - 80) / cols - gap, (H * 0.97 - tilesTop) / rows - gap, 200);
+    const rowW = s * cols + gap * (cols - 1);
     const x0 = (W - rowW) / 2 + s / 2;
-    for (let i = 0; i < hunt.tiles.length; i++) {
+    for (let i = 0; i < n; i++) {
       const t = hunt.tiles[i], r = (i / cols) | 0, k = i % cols;
       t.s = s;
       t.x = x0 + k * (s + gap);
-      t.y = narrow ? H * 0.5 + r * (s + gap) : H * 0.62;
+      t.y = tilesTop + r * (s + gap) + s / 2;
     }
-    // the big target letter up top (wobbling, spoken aloud when it appears)
-    const tSize = Math.min(W, H) * 0.26;
-    const ti = hunt.target.charCodeAt(0) % LETTER_COLORS.length;
+    // the big target (or a mystery "?" in sound-only rounds)
+    const tSize = Math.min(W, H) * (cfg.show ? 0.24 : 0.2);
     ctx.save();
-    ctx.translate(W / 2, H * 0.22);
+    ctx.translate(W / 2, H * 0.19);
     ctx.rotate(Math.sin(now * 1.6) * 0.05);
     ctx.font = 'bold ' + tSize + 'px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = tSize * 0.09; ctx.strokeStyle = '#fff';
-    ctx.fillStyle = LETTER_COLORS[ti];
-    ctx.strokeText(hunt.target, 0, 0);
-    ctx.fillText(hunt.target, 0, 0);
+    ctx.fillStyle = hunt.targetCol;
+    const glyph = cfg.show ? hunt.target : '?';
+    ctx.strokeText(glyph, 0, 0);
+    ctx.fillText(glyph, 0, 0);
     ctx.restore();
-    // the four tiles
+    if (!cfg.show) drawEmoji('\uD83D\uDD0A', W / 2 - tSize * 0.9, H * 0.19, tSize * 0.42, 0, 0.9);
+    // footprint streak meter: five paw prints fill on the way to the next rank
+    const done = hunt.streak % 5;
+    for (let i = 0; i < 5; i++) {
+      drawEmoji('\uD83D\uDC3E', W / 2 + (i - 2) * 34, H * 0.36, 24, 0, i < done ? 1 : 0.22);
+    }
+    // the tiles
     for (const t of hunt.tiles) {
       t.wob += dt * 2;
       if (t.shake > 0) t.shake = Math.max(0, t.shake - dt * 2.4);
       let alpha = 1, scale = 1;
-      if (t.solvedAt) {                 // the found tile pops away happily
+      if (t.solvedAt) {
         const p = (now - t.solvedAt) / 0.5;
         if (p > 1) continue;
         if (p > 0) { alpha = 1 - p; scale = 1 + p * 0.4; }
@@ -1222,7 +1288,7 @@
       ctx.fill(); ctx.stroke();
       ctx.font = 'bold ' + (t.s * 0.62) + 'px sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = LETTER_COLORS[t.ch.charCodeAt(0) % LETTER_COLORS.length];
+      ctx.fillStyle = t.col;
       ctx.fillText(t.ch, 0, t.s * 0.02);
       ctx.restore();
     }
@@ -1613,6 +1679,7 @@
   const optBgRotate = document.getElementById('optBgRotate');
   const optPairs = document.getElementById('optPairs');
   const optSpeak = document.getElementById('optSpeak');
+  const optHuntLvl = document.getElementById('optHuntLvl');
 
   // build the background chips
   THEME_ORDER.forEach((key) => {
@@ -1639,6 +1706,7 @@
     optBgRotate.checked = settings.bgRotate;
     optPairs.value = settings.matchPairs;
     optSpeak.checked = settings.speak;
+    optHuntLvl.value = settings.huntLevel || 1;
     optBg.querySelectorAll('button').forEach((b) =>
       b.classList.toggle('sel', b.dataset.bg === settings.bg));
   }
@@ -1659,6 +1727,8 @@
   optBgRotate.addEventListener('change', () => { settings.bgRotate = optBgRotate.checked; bgRotTimer = 0; saveSettings(); });
   optPairs.addEventListener('input', () => { settings.matchPairs = +optPairs.value; saveSettings(); match.level = 0; match.cleared = 0; if (matchMode) dealMatch(); });
   optSpeak.addEventListener('change', () => { settings.speak = optSpeak.checked; saveSettings(); if (settings.speak) speak('Hello!'); });
+  optHuntLvl.addEventListener('input', () => { settings.huntLevel = +optHuntLvl.value; saveSettings();
+    if (huntMode) { hunt.stage = settings.huntLevel - 1; hunt.streak = 0; hunt.miss = 0; newHuntRound(); } });
 
   document.getElementById('optReset').addEventListener('click', () => {
     dinoCount = 0; counterEl.textContent = '0';

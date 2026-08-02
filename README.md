@@ -48,10 +48,14 @@ That's it. No installing, no internet needed — it even works offline.
   a fresh set of eggs. Each pair scores a point, and every **5 cleared boards** the next deal adds **one more pair** (up to 6) — it gets trickier as he gets better! A grown-up slider sets the starting difficulty.
   Tap the egg button again to go back to smashing.
 - **🔤 Letter hunt** (top-right abc button): a big letter appears and the game
-  **says it out loud** — find it among four tiles by **tapping it or pressing the
+  **says it out loud** — find it among the tiles by **tapping it or pressing the
   key on the keyboard!** Right answers bring a dino stampede; wrong guesses just
-  wiggle. Every 5 in a row earns an extra celebration. (The matching tile is the
-  same color as the big letter — a friendly hint.)
+  wiggle. **Every 5 in a row levels him up a dino rank** — Hatchling → Baby Dino →
+  Big Dino → Giant Dino → **T-Rex** — and each rank plays a little harder: the
+  color hint goes away, more tiles appear, then look-alike letters (B/P/R/D),
+  and at T-Rex the big letter hides so he finds it **by sound alone**. Two misses
+  in a row and it gently eases back down — he always lands at his level. Paw
+  prints under the letter show progress to the next rank.
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
@@ -88,7 +92,7 @@ Open it by **holding the bottom-right corner for about a second**, or pressing
 **Ctrl + Shift + P** — both are hard for a toddler to trigger by accident.
 Everything you change is saved automatically for next time.
 
-- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Starting pairs for the 🥚 game (a pair is added every 5 cleared boards, up to 6)
+- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Starting pairs for the 🥚 game (a pair is added every 5 cleared boards, up to 6), Letter hunt starting level (1 color-match → 5 sound-only; it auto-ramps from there)
 - **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
 - **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle, Auto-change background (cycles the scene every ~40s), Speak letters aloud (the browser's voice says each letter — in smash mode and the letter hunt)
 - **Buttons:** Reset count, Reset best (clears the 🏆 record), Fullscreen, Done
