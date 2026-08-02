@@ -971,7 +971,7 @@
   // button to switch between smash mode and matching mode. No fail state —
   // a miss just flips the eggs gently back down.
   let matchMode = false;
-  const match = { cards: [], first: null, lockUntil: 0, flipA: null, flipB: null, celebrateAt: 0, level: 0 };
+  const match = { cards: [], first: null, lockUntil: 0, flipA: null, flipB: null, celebrateAt: 0, level: 0, cleared: 0 };
   function dealMatch() {
     // slider sets the STARTING pairs; each cleared board adds one more (max 6)
     const pairs = Math.max(2, Math.min(6, ((settings.matchPairs | 0) || 3) + match.level));
@@ -987,7 +987,7 @@
     matchMode = true; matchBtn.classList.add('on');
     if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
     dinos.length = 0; bigText.length = 0;   // clear the stage for the egg grid
-    match.level = 0;                         // difficulty ramps from the slider value
+    match.level = 0; match.cleared = 0;      // difficulty ramps from the slider value
     dealMatch(); fx('whoosh'); markInput();
   }
   function exitMatch() {
@@ -1060,7 +1060,8 @@
       fx('chime');
       confettiBurst(W / 2, H * 0.4, 80, 'stars'); emojiBurst(W / 2, H * 0.4);
       const before = match.cards.length;
-      match.level++;                          // each cleared board gets a little harder
+      match.cleared++;
+      if (match.cleared % 5 === 0) match.level++;   // one more pair every 5 cleared boards
       dealMatch();
       speak(match.cards.length > before ? 'You found them all! Here come more eggs!'
                                         : 'You found them all!');
@@ -1656,7 +1657,7 @@
   optMusicVol.addEventListener('input', () => { settings.musicVol = optMusicVol.value / 100; applyMusic(); });
   optMax.addEventListener('input', () => { settings.maxDinos = +optMax.value; saveSettings(); });
   optBgRotate.addEventListener('change', () => { settings.bgRotate = optBgRotate.checked; bgRotTimer = 0; saveSettings(); });
-  optPairs.addEventListener('input', () => { settings.matchPairs = +optPairs.value; saveSettings(); match.level = 0; if (matchMode) dealMatch(); });
+  optPairs.addEventListener('input', () => { settings.matchPairs = +optPairs.value; saveSettings(); match.level = 0; match.cleared = 0; if (matchMode) dealMatch(); });
   optSpeak.addEventListener('change', () => { settings.speak = optSpeak.checked; saveSettings(); if (settings.speak) speak('Hello!'); });
 
   document.getElementById('optReset').addEventListener('click', () => {

@@ -45,7 +45,7 @@ That's it. No installing, no internet needed — it even works offline.
 - **🥚 Egg matching game** (top-right egg button): the screen fills with dinosaur
   eggs — tap two to peek inside and **find the matching pairs!** A miss just flips
   them gently back (no way to lose). Clear the board for a starry celebration and
-  a fresh set of eggs. Each pair scores a point, and every cleared board deals **one more pair** than the last (up to 6) — it gets trickier as he gets better! A grown-up slider sets the starting difficulty.
+  a fresh set of eggs. Each pair scores a point, and every **5 cleared boards** the next deal adds **one more pair** (up to 6) — it gets trickier as he gets better! A grown-up slider sets the starting difficulty.
   Tap the egg button again to go back to smashing.
 - **🔤 Letter hunt** (top-right abc button): a big letter appears and the game
   **says it out loud** — find it among four tiles by **tapping it or pressing the
@@ -88,7 +88,7 @@ Open it by **holding the bottom-right corner for about a second**, or pressing
 **Ctrl + Shift + P** — both are hard for a toddler to trigger by accident.
 Everything you change is saved automatically for next time.
 
-- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Starting pairs for the 🥚 game (each cleared board adds one more pair, up to 6)
+- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Starting pairs for the 🥚 game (a pair is added every 5 cleared boards, up to 6)
 - **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
 - **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle, Auto-change background (cycles the scene every ~40s), Speak letters aloud (the browser's voice says each letter — in smash mode and the letter hunt)
 - **Buttons:** Reset count, Reset best (clears the 🏆 record), Fullscreen, Done
