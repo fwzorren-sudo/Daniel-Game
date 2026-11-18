@@ -56,6 +56,18 @@ That's it. No installing, no internet needed — it even works offline.
   and at T-Rex the big letter hides so he finds it **by sound alone**. Two misses
   in a row and it gently eases back down — he always lands at his level. Paw
   prints under the letter show progress to the next rank.
+- **🍖 Feed the dino** (top-right drumstick button): a hungry dinosaur asks for a
+  number of eggs — tap them one at a time while the game **counts out loud**
+  ("one… two… three!"), then watch the feast! Starts at 1 egg and works up to 10,
+  teaching real counting (1-to-1 correspondence), not just number names.
+- **✏️ Spell your name** (pencil button): the child's name appears as dashed
+  boxes with faint letter hints — find the shuffled letter tiles **in order**
+  (tap or keyboard) to fill them in. Spelling the whole name earns the biggest
+  celebration in the game. Set the name in the grown-up menu (default: DANIEL);
+  it's also woven into the spoken praise lines.
+- **👤 Whose shadow is this?** (silhouette button): a mystery dino appears as a
+  black shadow — tap the matching dinosaur below and the shadow **comes to life**
+  with a roar and its name spoken aloud. A fourth choice appears after 5 in a row.
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
@@ -92,7 +104,7 @@ Open it by **holding the bottom-right corner for about a second**, or pressing
 **Ctrl + Shift + P** — both are hard for a toddler to trigger by accident.
 Everything you change is saved automatically for next time.
 
-- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Starting pairs for the 🥚 game (a pair is added every 5 cleared boards, up to 6), Letter hunt starting level (1 color-match → 5 sound-only; it auto-ramps from there)
+- **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Starting pairs for the 🥚 game (a pair is added every 5 cleared boards, up to 6), Letter hunt starting level (1 color-match → 5 sound-only; it auto-ramps from there) · **Child's name** text box (letters only, used by the ✏️ game and in spoken praise)
 - **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
 - **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle, Auto-change background (cycles the scene every ~40s), Speak letters aloud (the browser's voice says each letter — in smash mode and the letter hunt)
 - **Buttons:** Reset count, Reset best (clears the 🏆 record), Fullscreen, Done

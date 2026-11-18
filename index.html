@@ -174,6 +174,9 @@
   <div id="btns">
     <button id="huntBtn" class="btn" title="Letter hunt game" aria-label="Letter hunt game">🔤</button>
     <button id="matchBtn" class="btn" title="Egg matching game" aria-label="Egg matching game">🥚</button>
+    <button id="feedBtn" class="btn" title="Feed the dino counting game" aria-label="Feed the dino counting game">🍖</button>
+    <button id="nameBtn" class="btn" title="Spell your name game" aria-label="Spell your name game">✏️</button>
+    <button id="shadowBtn" class="btn" title="Shadow matching game" aria-label="Shadow matching game">👤</button>
     <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
     <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
     <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
@@ -240,6 +243,15 @@
           <div class="ends"><span>1 (color match)</span><span>5 (by sound)</span></div>
         </div>
       </div>
+      <div class="row">
+        <span>Child's name (✏️ game)</span>
+        <div>
+          <input type="text" id="optName" maxlength="12" autocomplete="off" spellcheck="false"
+                 style="width:100%;box-sizing:border-box;font-size:18px;font-weight:700;letter-spacing:2px;
+                        padding:8px 10px;border-radius:10px;border:2px solid #cdd7e0;text-transform:uppercase">
+          <div class="ends"><span>letters only</span><span>used in ✏️ + cheers</span></div>
+        </div>
+      </div>
       <div class="row bgrow">
         <span>Background</span>
         <div class="bgpick" id="optBg"></div>
@@ -299,6 +311,9 @@
   const sceneBtn = document.getElementById('sceneBtn');
   const matchBtn = document.getElementById('matchBtn');
   const huntBtn = document.getElementById('huntBtn');
+  const feedBtn = document.getElementById('feedBtn');
+  const nameBtn = document.getElementById('nameBtn');
+  const shadowBtn = document.getElementById('shadowBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
   const bestEl = document.getElementById('counter').querySelector('.b');
   const exitHint = document.getElementById('exitHint');
@@ -307,7 +322,7 @@
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3, speak: true, huntLevel: 1 };
+                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3, speak: true, huntLevel: 1, kidName: 'DANIEL' };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -637,14 +652,19 @@
 
   // a rotating cheer so praise never gets repetitive (no immediate repeats)
   const PRAISE = ['Yay!', 'You did it!', 'Great job!', 'Woo hoo!', 'Awesome!',
-                  'Hooray!', 'Super!', 'You found it!', 'Way to go!', 'Dino-mite!',
-                  'Great job, Daniel!', 'You did it, Daniel!'];
+                  'Hooray!', 'Super!', 'You found it!', 'Way to go!', 'Dino-mite!'];
+  function kidName() {                      // sanitized: letters only, uppercase
+    const n = String(settings.kidName || 'DANIEL').replace(/[^a-zA-Z]/g, '').toUpperCase();
+    return (n.length >= 2 && n.length <= 12) ? n : 'DANIEL';
+  }
+  const properName = () => kidName()[0] + kidName().slice(1).toLowerCase();
   let lastPraise = -1;
   function cheer() {
+    const pool = PRAISE.concat(['Great job, ' + properName() + '!', 'You did it, ' + properName() + '!']);
     let i;
-    do { i = (Math.random() * PRAISE.length) | 0; } while (i === lastPraise);
+    do { i = (Math.random() * pool.length) | 0; } while (i === lastPraise);
     lastPraise = i;
-    speak(PRAISE[i]);
+    speak(pool[i]);
   }
 
   function pop() {
@@ -937,6 +957,9 @@
     markInput();
     if (matchMode) { matchTap(x, y); return; }
     if (huntMode) { huntTap(x, y); return; }
+    if (feedMode) { feedTap(x, y); return; }
+    if (nameMode) { nameTap(x, y); return; }
+    if (shadowMode) { shadowTap(x, y); return; }
     const hit = dinoAt(x, y);
     if (paintMode) {
       paintDot(x, y);
@@ -990,10 +1013,8 @@
     match.first = null; match.lockUntil = 0; match.flipA = null; match.flipB = null; match.celebrateAt = 0;
   }
   function enterMatch() {
-    if (huntMode) exitHunt();
+    exitOtherGames('match');
     matchMode = true; matchBtn.classList.add('on');
-    if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
-    dinos.length = 0; bigText.length = 0;   // clear the stage for the egg grid
     match.level = 0; match.cleared = 0;      // difficulty ramps from the slider value
     dealMatch(); fx('whoosh'); markInput();
   }
@@ -1152,10 +1173,8 @@
     speak((announce || '') + 'Find the ' + hunt.target + '!');
   }
   function enterHunt() {
-    if (matchMode) exitMatch();
+    exitOtherGames('hunt');
     huntMode = true; huntBtn.classList.add('on');
-    if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
-    dinos.length = 0; bigText.length = 0;
     hunt.streak = 0; hunt.miss = 0; hunt.pendingAnnounce = '';
     hunt.stage = Math.max(0, Math.min(HUNT_STAGES.length - 1, ((settings.huntLevel | 0) || 1) - 1));
     newHuntRound(); fx('whoosh'); markInput();
@@ -1291,6 +1310,339 @@
       ctx.fillStyle = t.col;
       ctx.fillText(t.ch, 0, t.s * 0.02);
       ctx.restore();
+    }
+  }
+
+  // ============================================================= feed / name / shadow
+  // Three bigger-kid games. All modes are mutually exclusive.
+  const DINO_SAY = { trex: 'T Rex', triceratops: 'Triceratops', stegosaurus: 'Stegosaurus',
+                     brontosaurus: 'Brontosaurus', velociraptor: 'Velociraptor',
+                     ankylosaurus: 'Ankylosaurus', spinosaurus: 'Spinosaurus',
+                     parasaurolophus: 'Parasaurolophus', pteranodon: 'Teranodon' };
+  const anyGameMode = () => matchMode || huntMode || feedMode || nameMode || shadowMode;
+  function exitOtherGames(keep) {
+    if (keep !== 'match' && matchMode) exitMatch();
+    if (keep !== 'hunt' && huntMode) exitHunt();
+    if (keep !== 'feed' && feedMode) exitFeed();
+    if (keep !== 'name' && nameMode) exitName();
+    if (keep !== 'shadow' && shadowMode) exitShadow();
+    if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
+    dinos.length = 0; bigText.length = 0;
+  }
+
+  // ---- feed the dino: tap eggs while the game counts them aloud ----
+  let feedMode = false;
+  const feed = { need: 1, count: 0, type: 'trex', eggs: [], nextAt: 0, round: 0, chomp: 0 };
+  function newFeedRound() {
+    feed.round++;
+    feed.need = feed.round <= 10 ? feed.round : 4 + ((Math.random() * 7) | 0);  // 1..10, then random 4-10
+    feed.count = 0; feed.nextAt = 0; feed.chomp = 0;
+    feed.type = pick(DINO_TYPES);
+    const n = Math.min(13, feed.need + 3);          // a few spare eggs so stopping is the game's job
+    feed.eggs = [];
+    const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;       // tidy grid = easy 1-to-1 counting
+    const rows = Math.ceil(n / cols);
+    for (let i = 0; i < n; i++) {
+      const r = (i / cols) | 0, k = i % cols;
+      feed.eggs.push({ fx: 0.10 + (k + 0.5) * (0.52 / cols), fy: 0.30 + (r + 0.5) * (0.62 / rows),
+                       eaten: 0, wob: rnd(0, TAU), x: 0, y: 0, s: 10, ex: 0, ey: 0 });
+    }
+    speak('The ' + DINO_SAY[feed.type] + ' is hungry! Feed it ' + feed.need + (feed.need === 1 ? ' egg!' : ' eggs!'));
+  }
+  function enterFeed() {
+    exitOtherGames('feed');
+    feedMode = true; feedBtn.classList.add('on');
+    feed.round = 0;
+    newFeedRound(); fx('whoosh'); markInput();
+  }
+  function exitFeed() {
+    feedMode = false; feedBtn.classList.remove('on');
+    feed.eggs.length = 0;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    markInput();
+  }
+  feedBtn.addEventListener('click', (e) => { e.stopPropagation(); if (feedMode) exitFeed(); else enterFeed(); pop(); });
+  function feedTap(x, y) {
+    if (feed.nextAt) { confettiBurst(x, y, 10); return; }
+    for (const g of feed.eggs) {
+      if (!g.eaten && Math.abs(g.x - x) < g.s * 0.55 && Math.abs(g.y - y) < g.s * 0.62) {
+        g.eaten = now; g.ex = g.x; g.ey = g.y;
+        feed.count++; feed.chomp = now;
+        bumpCounter(); fx('pop');
+        if (feed.count >= feed.need) {              // all fed: count the last one, then feast!
+          feed.nextAt = now + 2.0;
+          speak(feed.count + '! Yum yum yum!');
+          roar(feed.type);
+          confettiBurst(W * 0.78, H * 0.5, 50, 'stars');
+        } else speak(String(feed.count));           // count each egg out loud
+        return;
+      }
+    }
+    confettiBurst(x, y, 10); if (!fx('pop')) pop();
+  }
+  function stepFeed(dt) {
+    if (!feedMode) return;
+    if (feed.nextAt && now >= feed.nextAt) newFeedRound();
+    // the hungry dino on the right (chomp-bounces when fed)
+    const dSize = Math.min(W, H) * 0.42;
+    const dx = W * 0.78, dy = H * 0.52;
+    const ch = feed.chomp ? Math.max(0, 1 - (now - feed.chomp) / 0.3) : 0;
+    drawSprite(feed.type, 0, dx, dy + Math.sin(now * 2) * 6, dSize * (1 + ch * 0.08), Math.sin(now * 1.7) * 0.04, 1);
+    // big progress numeral: how many he's fed so far, out of the goal
+    const tSize = Math.min(W, H) * 0.17;
+    ctx.save();
+    ctx.font = 'bold ' + tSize + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = tSize * 0.1; ctx.strokeStyle = '#fff'; ctx.fillStyle = '#ff7b00';
+    const label = feed.count + ' / ' + feed.need;
+    ctx.strokeText(label, W * 0.36, H * 0.15);
+    ctx.fillText(label, W * 0.36, H * 0.15);
+    ctx.restore();
+    drawEmoji('\uD83C\uDF56', W * 0.36 - tSize * 1.6, H * 0.15, tSize * 0.55, 0, 0.9);
+    // eggs (grid on the left; eaten ones fly to the dino's mouth)
+    const es = Math.min(W * 0.52 / 4, H * 0.62 / 4, 120);
+    for (const g of feed.eggs) {
+      g.wob += dt * 2;
+      g.s = es;
+      if (!g.eaten) {
+        g.x = g.fx * W; g.y = g.fy * H;
+        ctx.save(); ctx.translate(g.x, g.y + Math.sin(g.wob) * 4);
+        drawEgg(es, es, 1);
+        ctx.restore();
+      } else {
+        const p = Math.min(1, (now - g.eaten) / 0.4);
+        if (p < 1) {
+          const ex = g.ex + (dx - g.ex) * p, ey = g.ey + (dy - dSize * 0.18 - g.ey) * p;
+          ctx.save(); ctx.translate(ex, ey);
+          ctx.globalAlpha = 1 - p * 0.6;
+          drawEgg(es * (1 - p * 0.6), es * (1 - p * 0.6), 1);
+          ctx.restore();
+        }
+      }
+    }
+  }
+
+  // ---- spell your name: find the letters in order ----
+  let nameMode = false;
+  const nameG = { word: 'DANIEL', idx: 0, tiles: [], nextAt: 0 };
+  function newNameRound() {
+    nameG.word = kidName();
+    nameG.idx = 0; nameG.nextAt = 0;
+    const chars = nameG.word.split('');
+    for (let i = chars.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = chars[i]; chars[i] = chars[j]; chars[j] = t; }
+    nameG.tiles = chars.map((c) => ({ ch: c, used: false, solvedAt: 0, wob: rnd(0, TAU), shake: 0, x: 0, y: 0, s: 10,
+                                      col: LETTER_COLORS[c.charCodeAt(0) % LETTER_COLORS.length] }));
+    speak('Can you spell ' + properName() + '? Find the ' + nameG.word[0] + '!');
+  }
+  function enterName() {
+    exitOtherGames('name');
+    nameMode = true; nameBtn.classList.add('on');
+    newNameRound(); fx('whoosh'); markInput();
+  }
+  function exitName() {
+    nameMode = false; nameBtn.classList.remove('on');
+    nameG.tiles.length = 0;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    markInput();
+  }
+  nameBtn.addEventListener('click', (e) => { e.stopPropagation(); if (nameMode) exitName(); else enterName(); pop(); });
+  function nameCorrect(tile) {
+    tile.used = true; tile.solvedAt = now;
+    nameG.idx++;
+    bumpCounter();
+    confettiBurst(tile.x, tile.y, 20, 'stars'); fx('shimmer');
+    if (nameG.idx >= nameG.word.length) {           // spelled the whole name!
+      nameG.nextAt = now + 2.6;
+      speak('You spelled ' + properName() + '! Hooray!');
+      fx('chime');
+      confettiBurst(W / 2, H * 0.4, 90, 'stars'); emojiBurst(W / 2, H * 0.4);
+      for (let i = 0; i < 5; i++) spawnDino(rnd(W * 0.15, W * 0.85), rnd(H * 0.1, H * 0.35), null, true);
+    } else speak(tile.ch + '! Now find the ' + nameG.word[nameG.idx] + '!');
+  }
+  function nameTap(x, y) {
+    if (nameG.nextAt) { confettiBurst(x, y, 10); return; }
+    for (const t of nameG.tiles) {
+      if (!t.used && Math.abs(t.x - x) < t.s / 2 && Math.abs(t.y - y) < t.s / 2) {
+        if (t.ch === nameG.word[nameG.idx]) nameCorrect(t);
+        else { t.shake = 1; fx('squeak'); }
+        return;
+      }
+    }
+    confettiBurst(x, y, 10); if (!fx('pop')) pop();
+    speak('Find the ' + nameG.word[nameG.idx] + '!');
+  }
+  function nameKey(k) {
+    if (nameG.nextAt || !/^[a-zA-Z]$/.test(k)) return;
+    const K = k.toUpperCase();
+    if (K === nameG.word[nameG.idx]) {
+      const t = nameG.tiles.filter((t) => !t.used && t.ch === K)[0];
+      if (t) nameCorrect(t);
+    } else {
+      const t = nameG.tiles.filter((t) => !t.used && t.ch === K)[0];
+      if (t) t.shake = 1;
+      fx('squeak');
+    }
+  }
+  function stepName(dt) {
+    if (!nameMode) return;
+    if (nameG.nextAt && now >= nameG.nextAt) newNameRound();
+    const word = nameG.word, len = word.length;
+    const gap = 10;
+    const slotS = Math.min((W - 60) / len - gap, H * 0.17, 110);
+    const slotX0 = (W - (slotS * len + gap * (len - 1))) / 2 + slotS / 2;
+    const slotY = H * 0.26;
+    // the name slots: solved letters filled in, the next one pulses
+    for (let i = 0; i < len; i++) {
+      const x = slotX0 + i * (slotS + gap);
+      ctx.save();
+      ctx.translate(x, slotY);
+      const active = i === nameG.idx && !nameG.nextAt;
+      const pulse = active ? 1 + Math.sin(now * 5) * 0.05 : 1;
+      ctx.scale(pulse, pulse);
+      ctx.fillStyle = 'rgba(255,255,255,.88)';
+      ctx.strokeStyle = i < nameG.idx ? '#06d6a0' : active ? '#ffb703' : 'rgba(120,140,160,.6)';
+      ctx.setLineDash(i < nameG.idx ? [] : [8, 7]);
+      ctx.lineWidth = Math.max(3, slotS * 0.055);
+      const r = slotS / 2;
+      ctx.beginPath();
+      ctx.moveTo(-r + 12, -r); ctx.arcTo(r, -r, r, r, 12); ctx.arcTo(r, r, -r, r, 12);
+      ctx.arcTo(-r, r, -r, -r, 12); ctx.arcTo(-r, -r, r, -r, 12); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = 'bold ' + (slotS * 0.62) + 'px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = i < nameG.idx ? LETTER_COLORS[word.charCodeAt(i) % LETTER_COLORS.length] : 'rgba(120,140,160,.28)';
+      ctx.fillText(word[i], 0, slotS * 0.02);       // faint letter = the model he matches against
+      ctx.restore();
+    }
+    // the shuffled letter tiles
+    const n = nameG.tiles.length;
+    const ts = Math.min((W - 60) / n - gap, H * 0.19, 120);
+    const tx0 = (W - (ts * n + gap * (n - 1))) / 2 + ts / 2;
+    const ty = H * 0.68;
+    for (let i = 0; i < n; i++) {
+      const t = nameG.tiles[i];
+      t.s = ts; t.x = tx0 + i * (ts + gap); t.y = ty;
+      t.wob += dt * 2;
+      if (t.shake > 0) t.shake = Math.max(0, t.shake - dt * 2.4);
+      let alpha = 1, scale = 1;
+      if (t.used) {
+        const p = (now - t.solvedAt) / 0.5;
+        if (p > 1) continue;
+        alpha = 1 - p; scale = 1 + p * 0.4;
+      }
+      const sx = t.x + Math.sin(t.shake * 26) * t.shake * 9;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(sx, t.y + Math.sin(t.wob) * 3);
+      ctx.scale(scale, scale);
+      const r = ts / 2;
+      ctx.fillStyle = 'rgba(255,255,255,.93)';
+      ctx.strokeStyle = t.shake > 0 ? '#ef476f' : '#4cc9f0';
+      ctx.lineWidth = Math.max(3, ts * 0.05);
+      ctx.beginPath();
+      ctx.moveTo(-r + 12, -r); ctx.arcTo(r, -r, r, r, 12); ctx.arcTo(r, r, -r, r, 12);
+      ctx.arcTo(-r, r, -r, -r, 12); ctx.arcTo(-r, -r, r, -r, 12); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.font = 'bold ' + (ts * 0.62) + 'px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = t.col;
+      ctx.fillText(t.ch, 0, ts * 0.02);
+      ctx.restore();
+    }
+  }
+
+  // ---- whose shadow is this? match the silhouette to the dino ----
+  let shadowMode = false;
+  const shadow = { target: 'trex', opts: [], nextAt: 0, streak: 0, reveal: 0 };
+  const silhouetteCache = new Map();
+  function getSilhouette(type) {
+    let c = silhouetteCache.get(type);
+    if (c) return c;
+    const sp = getSprite(type);
+    if (!sp || !sp.ready) return null;
+    c = document.createElement('canvas');
+    c.width = sp.canvas.width; c.height = sp.canvas.height;
+    const g = c.getContext('2d');
+    g.drawImage(sp.canvas, 0, 0);
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = '#263238';
+    g.fillRect(0, 0, c.width, c.height);
+    silhouetteCache.set(type, c);
+    return c;
+  }
+  function drawSilhouette(type, x, y, size, alpha) {
+    const c = getSilhouette(type);
+    if (!c) return;
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.translate(x, y);
+    const s = (size * 1.5) / Math.max(c.width, c.height);
+    ctx.drawImage(c, -c.width * s / 2, -c.height * s / 2, c.width * s, c.height * s);
+    ctx.restore();
+  }
+  function newShadowRound() {
+    const nOpts = shadow.streak >= 5 ? 4 : 3;       // a fourth choice once he's on a roll
+    const types = DINO_TYPES.slice();
+    for (let i = types.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = types[i]; types[i] = types[j]; types[j] = t; }
+    shadow.target = types[0];
+    const opts = types.slice(0, nOpts);
+    for (let i = opts.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = opts[i]; opts[i] = opts[j]; opts[j] = t; }
+    shadow.opts = opts.map((t) => ({ type: t, wob: rnd(0, TAU), shake: 0, x: 0, y: 0, s: 10 }));
+    shadow.reveal = 0; shadow.nextAt = 0;
+    speak('Whose shadow is this?');
+  }
+  function enterShadow() {
+    exitOtherGames('shadow');
+    shadowMode = true; shadowBtn.classList.add('on');
+    shadow.streak = 0;
+    newShadowRound(); fx('whoosh'); markInput();
+  }
+  function exitShadow() {
+    shadowMode = false; shadowBtn.classList.remove('on');
+    shadow.opts.length = 0;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    markInput();
+  }
+  shadowBtn.addEventListener('click', (e) => { e.stopPropagation(); if (shadowMode) exitShadow(); else enterShadow(); pop(); });
+  function shadowTap(x, y) {
+    if (shadow.nextAt) { confettiBurst(x, y, 10); return; }
+    for (const o of shadow.opts) {
+      if (Math.abs(o.x - x) < o.s * 0.55 && Math.abs(o.y - y) < o.s * 0.45) {
+        if (o.type === shadow.target) {             // found it: the shadow comes to life
+          shadow.reveal = now; shadow.nextAt = now + 1.9;
+          shadow.streak++;
+          bumpCounter();
+          roar(shadow.target); fx('shimmer');
+          confettiBurst(W / 2, H * 0.32, 45, 'stars');
+          speak("It's the " + DINO_SAY[shadow.target] + '!');
+        } else { o.shake = 1; fx('squeak'); shadow.streak = 0; }
+        return;
+      }
+    }
+    confettiBurst(x, y, 10); if (!fx('pop')) pop();
+  }
+  function stepShadow(dt) {
+    if (!shadowMode) return;
+    if (shadow.nextAt && now >= shadow.nextAt) newShadowRound();
+    // the mystery shadow up top (crossfades into the real dino when found)
+    const bigS = Math.min(W, H) * 0.42;
+    const p = shadow.reveal ? Math.min(1, (now - shadow.reveal) / 0.5) : 0;
+    const bob = Math.sin(now * 1.8) * 5;
+    if (p < 1) drawSilhouette(shadow.target, W / 2, H * 0.30 + bob, bigS, 1 - p);
+    if (p > 0) drawSprite(shadow.target, 0, W / 2, H * 0.30 + bob, bigS * (1 + p * 0.06), 0, p);
+    // the choices along the bottom
+    const n = shadow.opts.length;
+    const os = Math.min((W - 60) / n - 16, H * 0.30, 230);
+    const x0 = (W - (os * n + 16 * (n - 1))) / 2 + os / 2;
+    for (let i = 0; i < n; i++) {
+      const o = shadow.opts[i];
+      o.s = os; o.x = x0 + i * (os + 16); o.y = H * 0.78;
+      o.wob += dt * 2;
+      if (o.shake > 0) o.shake = Math.max(0, o.shake - dt * 2.4);
+      const sx = o.x + Math.sin(o.shake * 26) * o.shake * 9;
+      const solvedHide = p > 0 && o.type === shadow.target ? 1 - p * 0.5 : 1;
+      drawSprite(o.type, 0, sx, o.y + Math.sin(o.wob) * 4, os * solvedHide, 0, 1);
     }
   }
 
@@ -1531,7 +1883,7 @@
     // pace slider maps to how long we wait and how often surprises come
     const idleWait = 12 - settings.pace * 8;          // 12s (calm) .. 4s (lively)
     const gap = 8 - settings.pace * 5.5;              // 8s (calm) .. 2.5s (lively)
-    if (started && settings.idle && !menuOpen && !matchMode && !huntMode && now - lastInput > idleWait) {
+    if (started && settings.idle && !menuOpen && !anyGameMode() && now - lastInput > idleWait) {
       if (attractNext === 0) attractNext = now + gap * rnd(0.4, 0.8);
       if (now >= attractNext) { doAttract(); attractNext = now + gap * rnd(0.7, 1.3); }
     }
@@ -1546,7 +1898,7 @@
     roamTimer += dt;
     if (roamTimer > roamEvery && roamers.length < 5) {
       roamTimer = 0; roamEvery = rnd(2.5, 5.5);
-      if (settings.roamers && !matchMode && !huntMode) spawnRoamer();
+      if (settings.roamers && !anyGameMode()) spawnRoamer();
     }
     for (let i = roamers.length - 1; i >= 0; i--) {
       const r = roamers[i];
@@ -1596,6 +1948,9 @@
 
     stepMatch(dt);
     stepHunt(dt);
+    stepFeed(dt);
+    stepName(dt);
+    stepShadow(dt);
 
     // big letters/numbers
     for (let i = bigText.length - 1; i >= 0; i--) {
@@ -1680,6 +2035,7 @@
   const optPairs = document.getElementById('optPairs');
   const optSpeak = document.getElementById('optSpeak');
   const optHuntLvl = document.getElementById('optHuntLvl');
+  const optName = document.getElementById('optName');
 
   // build the background chips
   THEME_ORDER.forEach((key) => {
@@ -1707,6 +2063,7 @@
     optPairs.value = settings.matchPairs;
     optSpeak.checked = settings.speak;
     optHuntLvl.value = settings.huntLevel || 1;
+    optName.value = kidName();
     optBg.querySelectorAll('button').forEach((b) =>
       b.classList.toggle('sel', b.dataset.bg === settings.bg));
   }
@@ -1729,6 +2086,11 @@
   optSpeak.addEventListener('change', () => { settings.speak = optSpeak.checked; saveSettings(); if (settings.speak) speak('Hello!'); });
   optHuntLvl.addEventListener('input', () => { settings.huntLevel = +optHuntLvl.value; saveSettings();
     if (huntMode) { hunt.stage = settings.huntLevel - 1; hunt.streak = 0; hunt.miss = 0; newHuntRound(); } });
+  optName.addEventListener('change', () => {
+    settings.kidName = String(optName.value || '').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 12) || 'DANIEL';
+    optName.value = kidName(); saveSettings();
+    if (nameMode) newNameRound();
+  });
 
   document.getElementById('optReset').addEventListener('click', () => {
     dinoCount = 0; counterEl.textContent = '0';
@@ -1889,6 +2251,8 @@
     const y = rnd(H * 0.18, H * 0.62);
     if (matchMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
     if (huntMode) { huntKey(e.key); return; }
+    if (nameMode) { nameKey(e.key); return; }
+    if (feedMode || shadowMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
 
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       const ch = e.key.toUpperCase();
