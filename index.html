@@ -177,6 +177,7 @@
     <button id="feedBtn" class="btn" title="Feed the dino counting game" aria-label="Feed the dino counting game">🍖</button>
     <button id="nameBtn" class="btn" title="Spell your name game" aria-label="Spell your name game">✏️</button>
     <button id="shadowBtn" class="btn" title="Shadow matching game" aria-label="Shadow matching game">👤</button>
+    <button id="petBtn" class="btn" title="My pet dino" aria-label="My pet dinosaur">🐣</button>
     <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
     <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
     <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
@@ -289,6 +290,7 @@
       <div class="btns">
         <button id="optReset">Reset count</button>
         <button id="optResetBest">Reset best</button>
+        <button id="optNewPet">New pet egg</button>
         <button id="optFull">Fullscreen</button>
         <button id="optClose" class="primary">Done</button>
       </div>
@@ -314,6 +316,7 @@
   const feedBtn = document.getElementById('feedBtn');
   const nameBtn = document.getElementById('nameBtn');
   const shadowBtn = document.getElementById('shadowBtn');
+  const petBtn = document.getElementById('petBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
   const bestEl = document.getElementById('counter').querySelector('.b');
   const exitHint = document.getElementById('exitHint');
@@ -322,7 +325,7 @@
   // ---- grown-up settings (persisted in the browser) ----
   const DEFAULTS = { volume: 0.8, pace: 0.5, size: 0.5,
                      sound: true, letters: true, roamers: true, idle: true, bg: 'sunny',
-                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3, speak: true, huntLevel: 1, kidName: 'DANIEL' };
+                     music: true, musicVol: 0.5, best: 0, maxDinos: 16, bgRotate: true, matchPairs: 3, speak: true, huntLevel: 1, kidName: 'DANIEL', pet: null };
   let settings = Object.assign({}, DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem('danielSaurus') || '{}');
@@ -960,6 +963,7 @@
     if (feedMode) { feedTap(x, y); return; }
     if (nameMode) { nameTap(x, y); return; }
     if (shadowMode) { shadowTap(x, y); return; }
+    if (petMode) { petTap(x, y); return; }
     const hit = dinoAt(x, y);
     if (paintMode) {
       paintDot(x, y);
@@ -1319,13 +1323,14 @@
                      brontosaurus: 'Brontosaurus', velociraptor: 'Velociraptor',
                      ankylosaurus: 'Ankylosaurus', spinosaurus: 'Spinosaurus',
                      parasaurolophus: 'Parasaurolophus', pteranodon: 'Teranodon' };
-  const anyGameMode = () => matchMode || huntMode || feedMode || nameMode || shadowMode;
+  const anyGameMode = () => matchMode || huntMode || feedMode || nameMode || shadowMode || petMode;
   function exitOtherGames(keep) {
     if (keep !== 'match' && matchMode) exitMatch();
     if (keep !== 'hunt' && huntMode) exitHunt();
     if (keep !== 'feed' && feedMode) exitFeed();
     if (keep !== 'name' && nameMode) exitName();
     if (keep !== 'shadow' && shadowMode) exitShadow();
+    if (keep !== 'pet' && petMode) exitPet();
     if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
     dinos.length = 0; bigText.length = 0;
   }
@@ -1646,6 +1651,205 @@
     }
   }
 
+  // ---- hatch-a-pet: his very own dinosaur, saved between visits ----
+  // Tap the egg until it hatches, then feed / wash / play to help it grow.
+  // Nothing ever decays or dies: the pet is always happy to see him.
+  let petMode = false;
+  const PET_STAGE_XP = [0, 16, 40];                // baby -> big kid -> giant
+  const pet = { fly: null, bubbles: [], ball: null, hop: 0, lastCare: 0, grewAt: 0, crackWob: 0 };
+  function petData() {
+    if (!settings.pet) {
+      settings.pet = { type: pick(DINO_TYPES), hatched: false, taps: 0, xp: 0, stage: 0, lastDay: '' };
+      saveSettings();
+    }
+    return settings.pet;
+  }
+  function petSize() {
+    const d = petData();
+    const base = [0.26, 0.36, 0.48][d.stage] || 0.26;
+    const grow = pet.grewAt ? 1 + Math.max(0, 0.25 - (now - pet.grewAt) * 0.5) : 1; // little pop on level-up
+    return Math.min(W, H) * base * grow;
+  }
+  function petPos() {
+    return { x: W / 2 + Math.sin(now * 0.45) * W * 0.07,
+             y: H * 0.52 + Math.sin(now * 1.3) * 7 - Math.sin(Math.min(1, pet.hop) * Math.PI) * 55 };
+  }
+  function petGainXP(n) {
+    const d = petData();
+    d.xp += n;
+    const next = PET_STAGE_XP[d.stage + 1];
+    if (next != null && d.xp >= next) {            // grew a whole stage!
+      d.stage++; pet.grewAt = now;
+      fx('chime');
+      confettiBurst(W / 2, H * 0.45, 80, 'stars'); emojiBurst(W / 2, H * 0.45);
+      speak('Wow! Your ' + DINO_SAY[d.type] + ' grew bigger!');
+      roar(d.type);
+    }
+    saveSettings();
+  }
+  function enterPet() {
+    exitOtherGames('pet');
+    petMode = true; petBtn.classList.add('on');
+    const d = petData();
+    pet.fly = null; pet.bubbles.length = 0; pet.ball = null; pet.hop = 1; pet.lastCare = 0;
+    const today = new Date().toDateString();
+    if (!d.hatched) {
+      speak('Tap the egg!');
+    } else if (d.lastDay && d.lastDay !== today) {
+      petGainXP(3);                                // welcome-back treat
+      speak('Your ' + DINO_SAY[d.type] + ' missed you!');
+    } else {
+      speak('Your ' + DINO_SAY[d.type] + ' is happy to see you!');
+    }
+    d.lastDay = today; saveSettings();
+    fx('whoosh'); markInput();
+  }
+  function exitPet() {
+    petMode = false; petBtn.classList.remove('on');
+    try { speechSynthesis.cancel(); } catch (e) {}
+    markInput();
+  }
+  petBtn.addEventListener('click', (e) => { e.stopPropagation(); if (petMode) exitPet(); else enterPet(); pop(); });
+  function petCareButtons() {
+    const r = Math.min(W, H) * 0.085;
+    const y = H * 0.88;
+    return [
+      { act: 'feed', emoji: '\uD83C\uDF56', x: W * 0.28, y, r },
+      { act: 'wash', emoji: '\uD83E\uDEE7', x: W * 0.50, y, r },
+      { act: 'play', emoji: '\u26BD',       x: W * 0.72, y, r },
+    ];
+  }
+  function petTap(x, y) {
+    const d = petData();
+    const pp = petPos();
+    if (!d.hatched) {                              // ---- egg phase
+      const es = Math.min(W, H) * 0.38;
+      if (Math.abs(x - W / 2) < es * 0.5 && Math.abs(y - H * 0.52) < es * 0.55) {
+        d.taps++; pet.crackWob = 1;
+        fx(d.taps >= 5 ? 'poof' : 'pop');
+        confettiBurst(x, y, 8);
+        if (d.taps >= 5) {                         // ---- it hatches!
+          d.hatched = true; d.stage = 0;
+          pet.grewAt = now;
+          fx('chime');
+          confettiBurst(W / 2, H * 0.5, 90, 'stars'); emojiBurst(W / 2, H * 0.5);
+          speak('It hatched! Your very own baby ' + DINO_SAY[d.type] + '!');
+          roar(d.type);
+        }
+        saveSettings();
+      } else { confettiBurst(x, y, 10); if (!fx('pop')) pop(); }
+      return;
+    }
+    for (const b of petCareButtons()) {            // ---- care buttons
+      if ((x - b.x) * (x - b.x) + (y - b.y) * (y - b.y) < b.r * b.r * 1.3) {
+        if (now - pet.lastCare < 2.2) { fx('squeak'); return; }   // gentle cooldown
+        pet.lastCare = now;
+        bumpCounter();
+        if (b.act === 'feed') {
+          pet.fly = { x0: b.x, y0: b.y - b.r, t0: now };
+          speak('Yum yum!'); fx('pop');
+        } else if (b.act === 'wash') {
+          for (let i = 0; i < 10; i++) pet.bubbles.push({ x: pp.x + rnd(-60, 60), y: pp.y + rnd(-40, 60), vy: rnd(28, 70), born: now, s: rnd(16, 34) });
+          speak('Splish splash!'); fx('shimmer');
+        } else {
+          pet.ball = { x: W * 0.2, y: H * 0.3, vx: rnd(4, 6), vy: -2, until: now + 3.2 };
+          pet.hop = 0;
+          speak('Wheee!'); fx('whoosh');
+        }
+        petGainXP(2);
+        return;
+      }
+    }
+    const ps = petSize();                          // ---- petting the dino itself
+    if (Math.abs(x - pp.x) < ps * 0.55 && Math.abs(y - pp.y) < ps * 0.45) {
+      pet.hop = 0;
+      fx('squeak');
+      if (now - pet.lastCare >= 2.2) { pet.lastCare = now; petGainXP(1); bumpCounter(); }
+      confettiBurst(pp.x, pp.y - ps * 0.3, 14, 'warm');
+      if (Math.random() < 0.35) roar(d.type);
+      return;
+    }
+    confettiBurst(x, y, 10); if (!fx('pop')) pop();
+  }
+  function stepPet(dt) {
+    if (!petMode) return;
+    const d = petData();
+    if (!d.hatched) {                              // ---- the egg, with cracks per tap
+      if (pet.crackWob > 0) pet.crackWob = Math.max(0, pet.crackWob - dt * 2.5);
+      const es = Math.min(W, H) * 0.38;
+      const wob = Math.sin(pet.crackWob * 22) * pet.crackWob * 0.12;
+      ctx.save();
+      ctx.translate(W / 2, H * 0.52);
+      ctx.rotate(wob + Math.sin(now * 1.1) * 0.03);
+      drawEgg(es * 1.6, es * 1.5, 1);
+      ctx.strokeStyle = '#8d6e63'; ctx.lineWidth = Math.max(2.5, es * 0.02);
+      ctx.lineCap = 'round';
+      for (let i = 0; i < Math.min(d.taps, 4); i++) {   // zig-zag cracks appear tap by tap
+        const a = [-0.6, 0.5, -0.1, 0.9][i], ly = [-0.22, -0.05, 0.16, 0.02][i];
+        ctx.beginPath();
+        ctx.moveTo(a * es * 0.3, ly * es);
+        ctx.lineTo(a * es * 0.3 + es * 0.09, ly * es + es * 0.05);
+        ctx.lineTo(a * es * 0.3 + es * 0.04, ly * es + es * 0.12);
+        ctx.lineTo(a * es * 0.3 + es * 0.14, ly * es + es * 0.17);
+        ctx.stroke();
+      }
+      ctx.restore();
+      drawEmoji('\uD83D\uDC46', W / 2 + es * 0.75, H * 0.72, 40, -0.5, 0.6 + Math.sin(now * 3) * 0.3);
+      return;
+    }
+    // ---- the living pet
+    if (pet.hop < 1) pet.hop = Math.min(1, pet.hop + dt * 1.6);
+    const pp = petPos(), ps = petSize();
+    const face = Math.cos(now * 0.45) >= 0 ? 1 : -1;   // face the way it wanders
+    ctx.save();
+    ctx.translate(pp.x, pp.y);
+    if (face < 0) ctx.scale(-1, 1);
+    drawSprite(d.type, 0, 0, 0, ps, Math.sin(now * 1.7) * 0.03, 1);
+    ctx.restore();
+    // flying food
+    if (pet.fly) {
+      const p = Math.min(1, (now - pet.fly.t0) / 0.45);
+      const fxp = pet.fly.x0 + (pp.x - pet.fly.x0) * p;
+      const fyp = pet.fly.y0 + (pp.y - ps * 0.2 - pet.fly.y0) * p - Math.sin(p * Math.PI) * 70;
+      drawEmoji('\uD83C\uDF56', fxp, fyp, 38 * (1 - p * 0.5), p * 2, 1);
+      if (p >= 1) { pet.fly = null; pet.hop = 0; confettiBurst(pp.x, pp.y - ps * 0.25, 10, 'warm'); }
+    }
+    // bath bubbles
+    for (let i = pet.bubbles.length - 1; i >= 0; i--) {
+      const bu = pet.bubbles[i];
+      const age = now - bu.born;
+      if (age > 1.6) { pet.bubbles.splice(i, 1); continue; }
+      drawEmoji('\uD83E\uDEE7', bu.x + Math.sin(age * 5 + bu.s) * 6, bu.y - bu.vy * age, bu.s, 0, 1 - age / 1.6);
+    }
+    // bouncing ball
+    if (pet.ball) {
+      const bl = pet.ball;
+      bl.vy += dt * 22; bl.x += bl.vx; bl.y += bl.vy;
+      const floor = H * 0.62;
+      if (bl.y > floor) { bl.y = floor; bl.vy = -Math.abs(bl.vy) * 0.75; pet.hop = 0; fx('pop'); }
+      if (bl.x > W * 0.85 || bl.x < W * 0.1) bl.vx = -bl.vx;
+      drawEmoji('\u26BD', bl.x, bl.y, 44, now * 4, 1);
+      if (now > bl.until) pet.ball = null;
+    }
+    // heart meter: progress toward the next growth stage
+    const next = PET_STAGE_XP[d.stage + 1];
+    const prog = next == null ? 1 : Math.max(0, Math.min(1, (d.xp - PET_STAGE_XP[d.stage]) / (next - PET_STAGE_XP[d.stage])));
+    for (let i = 0; i < 5; i++) {
+      drawEmoji('\u2764\uFE0F', W / 2 + (i - 2) * 42, H * 0.22, 30, 0, i < Math.round(prog * 5) ? 1 : 0.22);
+    }
+    // care buttons
+    for (const b of petCareButtons()) {
+      const cool = Math.min(1, (now - pet.lastCare) / 2.2);
+      ctx.save();
+      ctx.globalAlpha = 0.55 + cool * 0.45;
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      ctx.strokeStyle = '#4cc9f0'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.restore();
+      drawEmoji(b.emoji, b.x, b.y, b.r * 1.05, 0, 0.55 + cool * 0.45);
+    }
+  }
+
   // ============================================================= roamers
   let roamTimer = 0, roamEvery = rnd(2.5, 5);
   function spawnRoamer() {
@@ -1951,6 +2155,7 @@
     stepFeed(dt);
     stepName(dt);
     stepShadow(dt);
+    stepPet(dt);
 
     // big letters/numbers
     for (let i = bigText.length - 1; i >= 0; i--) {
@@ -2097,6 +2302,10 @@
   });
   document.getElementById('optResetBest').addEventListener('click', () => {
     settings.best = 0; bestEl.textContent = '0'; saveSettings();
+  });
+  document.getElementById('optNewPet').addEventListener('click', () => {
+    settings.pet = null; saveSettings();   // a fresh egg next time the pet button is tapped
+    if (petMode) enterPet();
   });
   document.getElementById('optFull').addEventListener('click', () => {
     const el = document.documentElement;
@@ -2252,7 +2461,7 @@
     if (matchMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
     if (huntMode) { huntKey(e.key); return; }
     if (nameMode) { nameKey(e.key); return; }
-    if (feedMode || shadowMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
+    if (feedMode || shadowMode || petMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
 
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       const ch = e.key.toUpperCase();

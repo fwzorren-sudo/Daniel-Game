@@ -68,6 +68,13 @@ That's it. No installing, no internet needed — it even works offline.
 - **👤 Whose shadow is this?** (silhouette button): a mystery dino appears as a
   black shadow — tap the matching dinosaur below and the shadow **comes to life**
   with a roar and its name spoken aloud. A fourth choice appears after 5 in a row.
+- **🐣 My pet dino** (hatchling button): tap the egg until it **hatches into his
+  very own baby dinosaur** — which is saved on the device and remembers him
+  between visits (it even says it missed him after a day away). Feed it 🍖, give
+  it a bubble bath 🫧, or toss it a ball ⚽ — every bit of care fills the heart
+  meter, and a full meter makes the dino **grow visibly bigger** (baby → big kid
+  → giant). It never gets sad and nothing ever goes wrong; it's always happy to
+  see him. Grown-ups can start a fresh egg from the menu ("New pet egg").
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!
@@ -107,7 +114,7 @@ Everything you change is saved automatically for next time.
 - **Sliders:** Volume, Music volume, Surprise pace (Calm ↔ Lively), Dino size (Small ↔ Huge), On-screen dinos (Few ↔ Lots — turn it down if an older computer chugs), Starting pairs for the 🥚 game (a pair is added every 5 cleared boards, up to 6), Letter hunt starting level (1 color-match → 5 sound-only; it auto-ramps from there) · **Child's name** text box (letters only, used by the ✏️ game and in spoken praise)
 - **Background:** ☀️ Sunny · 🌋 Volcano · 🌙 Night · ❄️ Snowy (volcano has rising embers, snowy has falling snow) — **each scene has its own looping background music** that switches with the view
 - **Toggles:** Sound effects, Background music, Big letters & numbers, Roaming dinos, Surprises when idle, Auto-change background (cycles the scene every ~40s), Speak letters aloud (the browser's voice says each letter — in smash mode and the letter hunt)
-- **Buttons:** Reset count, Reset best (clears the 🏆 record), Fullscreen, Done
+- **Buttons:** Reset count, Reset best (clears the 🏆 record), New pet egg (starts the 🐣 pet over), Fullscreen, Done
 
 ### Other niceties
 - **Auto-tidy:** old dinosaurs gently fade away so the screen never gets too crowded.
