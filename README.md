@@ -75,6 +75,12 @@ That's it. No installing, no internet needed — it even works offline.
   meter, and a full meter makes the dino **grow visibly bigger** (baby → big kid
   → giant). It never gets sad and nothing ever goes wrong; it's always happy to
   see him. Grown-ups can start a fresh egg from the menu ("New pet egg").
+- **🦋 Butterfly chase** (butterfly button): his dinosaur (the pet, if it's
+  hatched!) runs after a butterfly that stays teasingly ahead. **Tap anywhere to
+  jump** — tap again mid-air for a little double-jump flap — and chomp the snacks
+  floating by. Every snack brings the butterfly closer; catch it for a starry
+  celebration, then it giggles away and the chase starts again, a touch faster.
+  Rocks just bonk-and-crumble — there's no way to lose, only chase.
 - **🎨 Color mode** (top-right button): tap it to turn on painting.
   - **Drag/swipe** anywhere to **finger-paint** rainbow trails. 🌈
   - **Tap a dinosaur** to shift its colors (a fun rainbow hue-shift)!

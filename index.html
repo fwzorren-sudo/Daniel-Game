@@ -178,6 +178,7 @@
     <button id="nameBtn" class="btn" title="Spell your name game" aria-label="Spell your name game">✏️</button>
     <button id="shadowBtn" class="btn" title="Shadow matching game" aria-label="Shadow matching game">👤</button>
     <button id="petBtn" class="btn" title="My pet dino" aria-label="My pet dinosaur">🐣</button>
+    <button id="runBtn" class="btn" title="Butterfly chase game" aria-label="Butterfly chase running game">🦋</button>
     <button id="sceneBtn" class="btn" title="Change background" aria-label="Change background">☀️</button>
     <button id="paintBtn" class="btn" title="Color mode" aria-label="Color the dinos mode">🎨</button>
     <button id="mute" class="btn" title="Sound on/off" aria-label="Sound on or off">🔊</button>
@@ -317,6 +318,7 @@
   const nameBtn = document.getElementById('nameBtn');
   const shadowBtn = document.getElementById('shadowBtn');
   const petBtn = document.getElementById('petBtn');
+  const runBtn = document.getElementById('runBtn');
   const counterEl = document.getElementById('counter').querySelector('.n');
   const bestEl = document.getElementById('counter').querySelector('.b');
   const exitHint = document.getElementById('exitHint');
@@ -964,6 +966,7 @@
     if (nameMode) { nameTap(x, y); return; }
     if (shadowMode) { shadowTap(x, y); return; }
     if (petMode) { petTap(x, y); return; }
+    if (runMode) { runJump(); return; }
     const hit = dinoAt(x, y);
     if (paintMode) {
       paintDot(x, y);
@@ -1323,7 +1326,7 @@
                      brontosaurus: 'Brontosaurus', velociraptor: 'Velociraptor',
                      ankylosaurus: 'Ankylosaurus', spinosaurus: 'Spinosaurus',
                      parasaurolophus: 'Parasaurolophus', pteranodon: 'Teranodon' };
-  const anyGameMode = () => matchMode || huntMode || feedMode || nameMode || shadowMode || petMode;
+  const anyGameMode = () => matchMode || huntMode || feedMode || nameMode || shadowMode || petMode || runMode;
   function exitOtherGames(keep) {
     if (keep !== 'match' && matchMode) exitMatch();
     if (keep !== 'hunt' && huntMode) exitHunt();
@@ -1331,6 +1334,7 @@
     if (keep !== 'name' && nameMode) exitName();
     if (keep !== 'shadow' && shadowMode) exitShadow();
     if (keep !== 'pet' && petMode) exitPet();
+    if (keep !== 'run' && runMode) exitRun();
     if (paintMode) { paintMode = false; paintBtn.classList.remove('on'); pctx.clearRect(0, 0, W, H); }
     dinos.length = 0; bigText.length = 0;
   }
@@ -1850,6 +1854,130 @@
     }
   }
 
+  // ---- butterfly chase: a no-lose runner. Tap anywhere to jump (twice for a
+  // flap), chomp the snacks as they float by, and every snack brings the
+  // butterfly a little closer until - got it! Then it giggles away and the
+  // chase starts over, a tiny bit faster. Rocks just bonk and crumble.
+  let runMode = false;
+  const run = { y: 0, vy: 0, jumps: 0, speed: 0, items: [], spawnAt: 0,
+                snacks: 0, needed: 8, caught: 0, catchAt: 0, bonk: 0, type: 'trex', legT: 0 };
+  const RUN_SNACKS = ['\uD83C\uDF56', '\uD83E\uDD5A', '\uD83C\uDF43'];
+  const runGroundY = () => H * 0.80;
+  const runDinoX = () => W * 0.22;
+  const runDinoSize = () => Math.min(W, H) * 0.30;
+  function enterRun() {
+    exitOtherGames('run');
+    runMode = true; runBtn.classList.add('on');
+    run.type = (settings.pet && settings.pet.hatched) ? settings.pet.type : pick(DINO_TYPES);
+    run.y = 0; run.vy = 0; run.jumps = 0;
+    run.speed = W * 0.28;                    // gentle start; a nudge faster per catch
+    run.items.length = 0; run.spawnAt = now + 0.8;
+    run.snacks = 0; run.caught = 0; run.catchAt = 0; run.bonk = 0;
+    speak('Chase the butterfly! Tap to jump!');
+    fx('whoosh'); markInput();
+  }
+  function exitRun() {
+    runMode = false; runBtn.classList.remove('on');
+    run.items.length = 0;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    markInput();
+  }
+  runBtn.addEventListener('click', (e) => { e.stopPropagation(); if (runMode) exitRun(); else enterRun(); pop(); });
+  function runJump() {
+    if (run.jumps >= 2) return;              // one jump + one mid-air flap
+    run.jumps++;
+    run.vy = -H * 1.45;
+    fx(run.jumps === 2 ? 'whoosh' : 'pop');
+    if (run.jumps === 2) confettiBurst(runDinoX(), runGroundY() + run.y - runDinoSize() * 0.3, 8, 'cool');
+  }
+  function stepRun(dt) {
+    if (!runMode) return;
+    const gy = runGroundY(), dx = runDinoX(), ds = runDinoSize();
+    // celebration pause after a catch
+    if (run.catchAt) {
+      if (now >= run.catchAt) { run.catchAt = 0; run.snacks = 0; run.speed = Math.min(W * 0.52, run.speed + W * 0.03); }
+    } else {
+      // physics
+      run.vy += H * 3.6 * dt;
+      run.y += run.vy * dt;
+      if (run.y >= 0) { run.y = 0; run.vy = 0; run.jumps = 0; }
+      // spawn snacks (mostly) and soft rocks (sometimes)
+      if (now >= run.spawnAt) {
+        run.spawnAt = now + rnd(0.9, 1.6);
+        if (Math.random() < 0.72) {
+          const lane = Math.random();        // ground / mid / high
+          const yOff = lane < 0.45 ? 0 : lane < 0.8 ? -H * 0.22 : -H * 0.38;
+          run.items.push({ kind: 'snack', emoji: pick(RUN_SNACKS), x: W + 60, y: gy - ds * 0.22 + yOff, wob: rnd(0, TAU), dead: 0 });
+        } else {
+          run.items.push({ kind: 'rock', x: W + 60, y: gy - ds * 0.07, wob: rnd(0, TAU), dead: 0 });
+        }
+      }
+      // move + collide
+      const dinoY = gy + run.y - ds * 0.28;  // dino center
+      for (let i = run.items.length - 1; i >= 0; i--) {
+        const it = run.items[i];
+        if (!it.dead) it.x -= run.speed * dt;
+        if (it.x < -80) { run.items.splice(i, 1); continue; }
+        if (it.dead) { if (now - it.dead > 0.4) run.items.splice(i, 1); continue; }
+        const hitX = Math.abs(it.x - dx) < ds * 0.33;
+        if (it.kind === 'snack' && hitX && Math.abs(it.y - dinoY) < ds * 0.34) {
+          it.dead = now;
+          run.snacks++; bumpCounter();
+          fx('pop'); confettiBurst(it.x, it.y, 16, 'warm');
+          if (run.snacks >= run.needed) {    // ---- caught the butterfly!
+            run.caught++; run.catchAt = now + 2.4;
+            bumpCounter();
+            fx('chime'); confettiBurst(dx + ds * 0.5, dinoY - ds * 0.3, 80, 'stars'); emojiBurst(dx + ds * 0.5, dinoY - ds * 0.3);
+            roar(run.type);
+            speak('You caught the butterfly! Hooray!');
+          } else if (run.snacks % 3 === 0) cheer();
+        } else if (it.kind === 'rock' && hitX && run.y > -ds * 0.3) {
+          it.dead = now;                     // comic bonk: rock crumbles, dino squashes
+          run.bonk = 1;
+          fx('squeak'); confettiBurst(it.x, it.y, 18);
+        }
+      }
+    }
+    if (run.bonk > 0) run.bonk = Math.max(0, run.bonk - dt * 3);
+    // ---- draw: the butterfly ahead (closer with every snack)
+    const prog = run.catchAt ? 1 : run.snacks / run.needed;
+    const bx = run.catchAt ? dx + ds * 0.42 : dx + ds * 0.55 + (W * 0.9 - (dx + ds * 0.55)) * (1 - prog) * 0.55;
+    const by = (run.catchAt ? gy + run.y - ds * 0.62 : gy - ds * 0.75) + Math.sin(now * 3.2) * 18;
+    drawEmoji('\uD83E\uDD8B', bx, by, 52 + Math.sin(now * 6) * 5, Math.sin(now * 2.5) * 0.2, 1);
+    if (run.catchAt) {                       // little hearts while it rests on his nose
+      drawEmoji('\u2764\uFE0F', bx + 30, by - 36 - (now % 0.8) * 40, 22, 0, 0.9);
+    }
+    // the running dino (squash on bonk, lean while airborne)
+    const squash = 1 - run.bonk * 0.18;
+    const bob = run.y === 0 ? Math.abs(Math.sin(now * 9)) * ds * 0.03 : 0;
+    ctx.save();
+    ctx.translate(dx, gy + run.y - ds * 0.28 - bob);
+    ctx.scale(-squash, 1 / squash);          // flip to face right
+    drawSprite(run.type, 0, 0, 0, ds, run.y < 0 ? 0.08 : Math.sin(now * 9) * 0.03, 1);
+    ctx.restore();
+    // dust puffs while on the ground
+    if (run.y === 0 && Math.random() < 0.3) {
+      ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(dx - ds * 0.3 + rnd(-8, 8), gy - 4, rnd(3, 7), 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    // items
+    for (const it of run.items) {
+      it.wob += dt * 3;
+      if (it.kind === 'snack') {
+        const p = it.dead ? Math.min(1, (now - it.dead) / 0.4) : 0;
+        drawEmoji(it.emoji, it.x, it.y + Math.sin(it.wob) * 7 - p * 30, 44 * (1 - p * 0.8), Math.sin(it.wob) * 0.2, 1 - p);
+      } else {
+        const p = it.dead ? Math.min(1, (now - it.dead) / 0.4) : 0;
+        drawEmoji('\uD83E\uDEA8', it.x, it.y + p * 10, 52 * (1 - p * 0.6), 0, 1 - p);
+      }
+    }
+    // progress: little butterflies fill as he closes in
+    for (let i = 0; i < run.needed; i++) {
+      drawEmoji('\uD83E\uDD8B', W / 2 + (i - (run.needed - 1) / 2) * 34, H * 0.22, 20, 0, i < run.snacks ? 1 : 0.2);
+    }
+  }
+
   // ============================================================= roamers
   let roamTimer = 0, roamEvery = rnd(2.5, 5);
   function spawnRoamer() {
@@ -2156,6 +2284,7 @@
     stepName(dt);
     stepShadow(dt);
     stepPet(dt);
+    stepRun(dt);
 
     // big letters/numbers
     for (let i = bigText.length - 1; i >= 0; i--) {
@@ -2462,6 +2591,7 @@
     if (huntMode) { huntKey(e.key); return; }
     if (nameMode) { nameKey(e.key); return; }
     if (feedMode || shadowMode || petMode) { confettiBurst(x, y, 12); if (!fx('pop')) pop(); return; }
+    if (runMode) { runJump(); return; }
 
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       const ch = e.key.toUpperCase();
