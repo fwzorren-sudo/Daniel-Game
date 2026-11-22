@@ -1380,7 +1380,8 @@
         bumpCounter(); fx('pop');
         if (feed.count >= feed.need) {              // all fed: count the last one, then feast!
           feed.nextAt = now + 2.0;
-          speak(feed.count + '! Yum yum yum!');
+          speak(feed.count + '! ' + pick(['Yum yum yum!', 'Burp! Excuse me!', 'Mmm, so tasty!',
+                                          'Chomp chomp! All gone!', 'Deeee-licious!', 'What a feast!']));
           roar(feed.type);
           confettiBurst(W * 0.78, H * 0.5, 50, 'stars');
         } else speak(String(feed.count));           // count each egg out loud
@@ -1638,6 +1639,13 @@
     const bigS = Math.min(W, H) * 0.42;
     const p = shadow.reveal ? Math.min(1, (now - shadow.reveal) / 0.5) : 0;
     const bob = Math.sin(now * 1.8) * 5;
+    // a soft moonlit glow behind the shadow so it reads on dark scenes (night!)
+    const glow = ctx.createRadialGradient(W / 2, H * 0.30 + bob, bigS * 0.1, W / 2, H * 0.30 + bob, bigS * 0.72);
+    glow.addColorStop(0, 'rgba(255,252,235,.95)');
+    glow.addColorStop(0.75, 'rgba(255,252,235,.85)');
+    glow.addColorStop(1, 'rgba(255,252,235,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(W / 2, H * 0.30 + bob, bigS * 0.72, 0, TAU); ctx.fill();
     if (p < 1) drawSilhouette(shadow.target, W / 2, H * 0.30 + bob, bigS, 1 - p);
     if (p > 0) drawSprite(shadow.target, 0, W / 2, H * 0.30 + bob, bigS * (1 + p * 0.06), 0, p);
     // the choices along the bottom
@@ -1886,7 +1894,7 @@
   function runJump() {
     if (run.jumps >= 2) return;              // one jump + one mid-air flap
     run.jumps++;
-    run.vy = -H * 1.45;
+    run.vy = -H * 1.15;
     fx(run.jumps === 2 ? 'whoosh' : 'pop');
     if (run.jumps === 2) confettiBurst(runDinoX(), runGroundY() + run.y - runDinoSize() * 0.3, 8, 'cool');
   }
@@ -1898,7 +1906,7 @@
       if (now >= run.catchAt) { run.catchAt = 0; run.snacks = 0; run.speed = Math.min(W * 0.52, run.speed + W * 0.03); }
     } else {
       // physics
-      run.vy += H * 3.6 * dt;
+      run.vy += H * 2.1 * dt;        // gentle gravity: a single hop hangs long enough to clear a rock
       run.y += run.vy * dt;
       if (run.y >= 0) { run.y = 0; run.vy = 0; run.jumps = 0; }
       // spawn snacks (mostly) and soft rocks (sometimes)
@@ -1919,7 +1927,7 @@
         if (!it.dead) it.x -= run.speed * dt;
         if (it.x < -80) { run.items.splice(i, 1); continue; }
         if (it.dead) { if (now - it.dead > 0.4) run.items.splice(i, 1); continue; }
-        const hitX = Math.abs(it.x - dx) < ds * 0.33;
+        const hitX = Math.abs(it.x - dx) < ds * (it.kind === 'rock' ? 0.2 : 0.33);   // rocks have a slim hitbox
         if (it.kind === 'snack' && hitX && Math.abs(it.y - dinoY) < ds * 0.34) {
           it.dead = now;
           run.snacks++; bumpCounter();
@@ -1931,7 +1939,7 @@
             roar(run.type);
             speak('You caught the butterfly! Hooray!');
           } else if (run.snacks % 3 === 0) cheer();
-        } else if (it.kind === 'rock' && hitX && run.y > -ds * 0.3) {
+        } else if (it.kind === 'rock' && hitX && run.y > -ds * 0.18) {   // any real hop clears it
           it.dead = now;                     // comic bonk: rock crumbles, dino squashes
           run.bonk = 1;
           fx('squeak'); confettiBurst(it.x, it.y, 18);
@@ -1969,7 +1977,7 @@
         drawEmoji(it.emoji, it.x, it.y + Math.sin(it.wob) * 7 - p * 30, 44 * (1 - p * 0.8), Math.sin(it.wob) * 0.2, 1 - p);
       } else {
         const p = it.dead ? Math.min(1, (now - it.dead) / 0.4) : 0;
-        drawEmoji('\uD83E\uDEA8', it.x, it.y + p * 10, 52 * (1 - p * 0.6), 0, 1 - p);
+        drawEmoji('\uD83E\uDEA8', it.x, it.y + p * 10, 44 * (1 - p * 0.6), 0, 1 - p);
       }
     }
     // progress: little butterflies fill as he closes in
